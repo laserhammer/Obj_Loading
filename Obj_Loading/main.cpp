@@ -2,6 +2,7 @@
 #include "GLFW/glfw3.h"
 #include <ctime>
 #include <random>
+#include <crtdbg.h>
 
 #include "Init_Shader.h"
 #include "CameraManager.h"
@@ -16,10 +17,22 @@ GLFWwindow* window;
 
 RenderObject* sphere;
 
+Light* light;
+
+void InitLights()
+{
+	light = LightingManager::GetLight(0);
+	light->position.y = 3.0f;
+	light->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	light->power = 5.0f;
+}
+
 void init()
 {
-	ResourceManager::Init();
-
+	// Enable run-time memory check for debug builds.
+#if defined(DEBUG) | defined(_DEBUG)
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 	if (!glfwInit()) exit(EXIT_FAILURE);
 
 	//Create window
@@ -36,7 +49,7 @@ void init()
 	glewExperimental = true;
 	glewInit();
 
-	//initShaders();
+	ResourceManager::Init();
 
 	glfwSetTime(0.0);
 
@@ -44,12 +57,12 @@ void init()
 	time(&timer);
 	srand((unsigned int)timer);
 
-	//SetupLights();
+	InitLights();
 
 	//generateTeapot();
 
-	//InputManager::Init(window);
-	//CameraManager::Init(800.0f / 600.0f, 60.0f, 0.1f, 100.0f);
+	InputManager::Init(window);
+	CameraManager::Init(800.0f / 600.0f, 60.0f, 0.1f, 100.0f);
 }
 
 void step()
@@ -61,7 +74,7 @@ void step()
 	InputManager::Update();
 
 	// Get delta time since the last frame
-	float dt = glfwGetTime();
+	float dt = (float)glfwGetTime();
 	glfwSetTime(0.0);
 
 	//float dTheta = 45.0f * InputManager::rightKey();
@@ -73,7 +86,7 @@ void step()
 
 	RenderManager::Update(dt);
 
-	//LightingManager::Update(dt);
+	LightingManager::Update(dt);
 
 	//teapot->Update(dt);
 

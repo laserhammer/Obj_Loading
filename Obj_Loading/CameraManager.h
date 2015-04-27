@@ -1,7 +1,13 @@
 #pragma once
-
+#include <GLEW\GL\glew.h>
 #include <GLM\gtc\type_ptr.hpp>
 #include <GLM\gtc\matrix_transform.hpp>
+
+struct CameraBlock
+{
+	float viewProjMat[4][4];
+	float camPos[4];
+};
 
 class CameraManager
 {
@@ -17,4 +23,7 @@ private:
 	static glm::vec4 _camPos;
 
 	static glm::vec2 _position;
+
+	static CameraBlock _cameraData;
+	static GLuint _cameraBuffer;
 };

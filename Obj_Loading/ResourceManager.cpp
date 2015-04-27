@@ -1,4 +1,5 @@
 #include "ResourceManager.h"
+#include "LightingManager.h"
 #include <fstream>
 #include <iostream>
 
@@ -7,66 +8,10 @@ Mesh ResourceManager::sphere;
 GLuint ResourceManager::phongVertShader;
 GLuint ResourceManager::phongFragShader;
 
-void GenVertices(Vertex** verts, unsigned int& numVerts, GLuint** vertElements, unsigned int& numVertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements)
-{
-	int vertStorage = numVerts >= numVertNorms ? numVerts : numVertNorms;
-	*vertElements = new GLuint[numElements];
-	unsigned int uniqueElementCount = 0;
-	bool commonVert, commonUV, commonNorm;
-	for (unsigned int i = 0; i < numElements; ++i)
-	{
-		if ((*vertElements)[i] > i)
-		{
-			(*vertElements)[i] = uniqueElementCount++;
-		}
-		// Compare each element to all other elements to find common verts
-		for (unsigned int j = i + 1; j < numElements; ++j)
-		{
-			commonVert = elements[i][0] == elements[j][0];
-			commonUV = elements[i][1] == elements[j][1];
-			commonNorm = elements[i][2] == elements[j][2];
-			if (commonVert && commonUV && commonNorm)
-			{
-				(*vertElements)[j] = (*vertElements)[i];
-			}
-		}
-	}
-	for (unsigned int i = 0; i < numElements; i += 3)
-	{
-		std::cout << (*vertElements)[i] << ", " << (*vertElements)[i + 1] << ", " << (*vertElements)[i + 2] << std::endl;
-	}
-	
-	*verts = new Vertex[uniqueElementCount];
-	unsigned int vertElement, u, posValueIndex, normValueIndex;
-	u = 0;
-	for (unsigned int i = 0; i < numElements; ++i)
-	{
-		if ((*vertElements)[i] == u)
-		{
-			vertElement = (*vertElements)[i];
-			posValueIndex = (elements[vertElement][0] - 1) * 3;
-			normValueIndex = (elements[vertElement][2] - 1) * 3;
-			(*verts)[u] = Vertex();
-			(*verts)[u].posX = vertPos[posValueIndex];
-			(*verts)[u].posY = vertPos[posValueIndex + 1];
-			(*verts)[u].posZ = vertPos[posValueIndex + 2];
+const GLuint ResourceManager::PERMODEL_BIND_POINT = 0;
+const GLuint ResourceManager::LIGHTS_BIND_POINT = 1;
+const GLuint ResourceManager::CAMERA_BIND_POINT = 2;
 
-			(*verts)[u].texCoordU = 0.0f;
-			(*verts)[u].texCoordV = 0.0f;
-
-			(*verts)[u].normX = vertNorms[normValueIndex];
-			(*verts)[u].normY = vertNorms[normValueIndex + 1];
-			(*verts)[u].normZ = vertNorms[normValueIndex + 2];
-			++u;
-		}
-		else
-			continue;
-	}
-	for (unsigned int i = 0; i < uniqueElementCount; ++i)
-	{
-		std::cout << (*verts)[i].posX << ", " << (*verts)[i].posY << ", " << (*verts)[i].posZ << std::endl;
-	}
-}
 
 void ResourceManager::Init()
 {
@@ -75,17 +20,16 @@ void ResourceManager::Init()
 	unsigned int numVertPos;
 	GLfloat *vertNorms = nullptr;
 	unsigned int numVertNorms;
-	GLint (*elements)[3] = nullptr;
+	GLint **elements = nullptr;
 	unsigned int numElements;
 	ParseOBJ(sphereObj, &vertPos, numVertPos, &vertNorms, numVertNorms, (GLint***)&elements, numElements);
 
 	Vertex* verts = nullptr;
 	unsigned int numVerts;
 	GLuint* vertElements = nullptr;
-	unsigned int numVertElements;
-	GenVertices(&verts, numVerts, &vertElements, numVertElements, vertPos, vertNorms, numVertNorms, (GLint**)elements, numElements);
+	GenVertices(&verts, numVerts, &vertElements, vertPos, vertNorms, numVertNorms, (GLint**)elements, numElements);
 
-	sphere = GenMesh(verts, vertElements, numVertElements);
+	GenMesh(verts, vertElements, numElements, sphere);
 
 	delete[] verts;
 	delete[] vertElements;
@@ -95,24 +39,28 @@ void ResourceManager::Init()
 	delete[] vertNorms;
 	for (unsigned int i = 0; i < numElements; ++i)
 	{
-		delete[] &(elements[i]);
+		delete[] elements[i];
 	}
 	delete[] elements;
 
 	GLuint shaders[2];
-	char* fshader = ReadTextFile("fshader.glsl");
-	char* vshader = ReadTextFile("vshader.glsl");
 	
-	phongFragShader = CompileShader(fshader, GL_FRAGMENT_SHADER);
-	phongVertShader = CompileShader(vshader, GL_VERTEX_SHADER);
+	phongFragShader = CompileShader("fshader.glsl", GL_FRAGMENT_SHADER);
+	phongVertShader = CompileShader("vshader.glsl", GL_VERTEX_SHADER);
 
 	shaders[0] = phongFragShader;
 	shaders[1] = phongVertShader;
 
 	phongShader = Shader();
 	phongShader.program = LinkShaderProgram(shaders, 2, 0, "outColor");
+
 	phongShader.uPerModelBlockIndex = glGetUniformBlockIndex(phongShader.program, "perModel");
-	phongShader.uPerModelBlockIndex = glGetUniformBlockIndex(phongShader.program, "camera");
+	glUniformBlockBinding(phongShader.program, phongShader.uPerModelBlockIndex, PERMODEL_BIND_POINT);
+	phongShader.uCameraBlockIndex = glGetUniformBlockIndex(phongShader.program, "camera");
+	glUniformBlockBinding(phongShader.program, phongShader.uCameraBlockIndex, CAMERA_BIND_POINT);
+	phongShader.uLightsBlockIndex = glGetUniformBlockIndex(phongShader.program, "lightsBlock");
+	glUniformBlockBinding(phongShader.program, phongShader.uLightsBlockIndex, LIGHTS_BIND_POINT);
+
 
 	GLuint posAttrib = glGetAttribLocation(phongShader.program, "position");
 	glEnableVertexAttribArray(posAttrib);
@@ -125,10 +73,6 @@ void ResourceManager::Init()
 	GLuint normAttrib = glGetAttribLocation(phongShader.program, "normal");
 	glEnableVertexAttribArray(normAttrib);
 	glVertexAttribPointer(normAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 5));
-
-
-	delete fshader;
-	delete vshader;
 }
 
 void ResourceManager::DumpData()
@@ -136,6 +80,7 @@ void ResourceManager::DumpData()
 	ReleaseMesh(sphere);
 	glDeleteShader(phongFragShader);
 	glDeleteShader(phongVertShader);
+	glDeleteProgram(phongShader.program);
 }
 
 char* ResourceManager::ReadTextFile(const char* filepath)
@@ -306,8 +251,6 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 	for (int i = 0; i < elementStorage; ++i)
 	{
 		(*elements)[i] = new GLint[3];
-		(*elements)[i] = new GLint[3];
-		(*elements)[i] = new GLint[3];
 	}
 
 	int vert, norm, vertEle, elementIndex, numTerms, term, termItr, lineItr, elementItr;
@@ -371,10 +314,7 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 				{
 					GLfloat *temp = *vertPos;
 					*vertPos = new GLfloat[vertPosStorage * 2];
-					for (int i = 0; i < vertPosStorage; ++i)
-					{
-						(*vertPos)[i] = temp[i];
-					}
+					memcpy(*vertPos, temp, sizeof(GLfloat) * vertPosStorage);
 					vertPosStorage *= 2;
 					delete[] temp;
 				}
@@ -393,10 +333,7 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 				{
 					GLfloat *temp = *vertNorm;
 					*vertNorm = new GLfloat[vertNormStorage * 2];
-					for (int i = 0; i < vertNormStorage; ++i)
-					{
-						(*vertNorm)[i] = temp[i];
-					}
+					memcpy(*vertNorm, temp, sizeof(GLfloat) * vertNormStorage);
 					vertNormStorage *= 2;
 					delete[] temp;
 				}
@@ -418,14 +355,14 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 					for (int i = 0; i < elementStorage * 2; ++i)
 					{
 						(*elements)[i] = new GLint[3];
-						(*elements)[i] = new GLint[3];
-						(*elements)[i] = new GLint[3];
 					}
+					
 					for (int i = 0; i < elementStorage; ++i)
 					{
-						(*elements)[i][0] = temp[i][0];
-						(*elements)[i][1] = temp[i][1];
-						(*elements)[i][2] = temp[i][2];
+						memcpy((*elements)[i], temp[i], sizeof(GLuint) * 3);
+						//(*elements)[i][0] = temp[i][0];
+						//(*elements)[i][1] = temp[i][1];
+						//(*elements)[i][2] = temp[i][2];
 					}
 					for (int i = 0; i < elementStorage; ++i)
 					{
@@ -439,7 +376,7 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 				elementItr = 0;
 				for (term = 1; term < numTerms; ++term)
 				{
-					(*elements)[vertEle] = new GLint[3];
+					//(*elements)[vertEle] = new GLint[3];
 					elementIndex = 0;
 					for (termItr = 0; terms[term][termItr]; ++termItr)
 					{
@@ -468,9 +405,9 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 	}
 }
 
-Mesh ResourceManager::GenMesh(Vertex* verts, GLuint* elements, GLuint numElements)
+void ResourceManager::GenMesh(Vertex* verts, GLuint* elements, GLuint numElements, Mesh& mesh)
 {
-	Mesh mesh = Mesh();
+	mesh = Mesh();
 	
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -484,8 +421,59 @@ Mesh ResourceManager::GenMesh(Vertex* verts, GLuint* elements, GLuint numElement
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), &elements, GL_STATIC_DRAW);
 
 	mesh.count = numElements;
+}
 
-	return mesh;
+void ResourceManager::GenVertices(Vertex** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements)
+{
+	int vertStorage = numVerts >= numVertNorms ? numVerts : numVertNorms;
+	*vertElements = new GLuint[numElements];
+	unsigned int uniqueElementCount = 0;
+	bool commonVert, commonUV, commonNorm;
+	for (unsigned int i = 0; i < numElements; ++i)
+	{
+		if ((*vertElements)[i] > i)
+		{
+			(*vertElements)[i] = uniqueElementCount++;
+		}
+		// Compare each element to all other elements to find common verts
+		for (unsigned int j = i + 1; j < numElements; ++j)
+		{
+			commonVert = elements[i][0] == elements[j][0];
+			commonUV = elements[i][1] == elements[j][1];
+			commonNorm = elements[i][2] == elements[j][2];
+			if (commonVert && commonUV && commonNorm)
+			{
+				(*vertElements)[j] = (*vertElements)[i];
+			}
+		}
+	}
+
+	*verts = new Vertex[uniqueElementCount];
+	unsigned int vertElement, u, posValueIndex, normValueIndex;
+	u = 0;
+	for (unsigned int i = 0; i < numElements; ++i)
+	{
+		if ((*vertElements)[i] == u)
+		{
+			vertElement = (*vertElements)[i];
+			posValueIndex = (elements[vertElement][0] - 1) * 3;
+			normValueIndex = (elements[vertElement][2] - 1) * 3;
+			(*verts)[u] = Vertex();
+			(*verts)[u].posX = vertPos[posValueIndex];
+			(*verts)[u].posY = vertPos[posValueIndex + 1];
+			(*verts)[u].posZ = vertPos[posValueIndex + 2];
+
+			(*verts)[u].texCoordU = 0.0f;
+			(*verts)[u].texCoordV = 0.0f;
+
+			(*verts)[u].normX = vertNorms[normValueIndex];
+			(*verts)[u].normY = vertNorms[normValueIndex + 1];
+			(*verts)[u].normZ = vertNorms[normValueIndex + 2];
+			++u;
+		}
+		else
+			continue;
+	}
 }
 
 void ResourceManager::ReleaseMesh(Mesh& mesh)

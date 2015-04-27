@@ -2,7 +2,7 @@
 
 const int MAX_LIGHTS = 8;
 
-layout (std140) struct Light
+struct Light
 {
 	vec4 position;
 	vec4 color_power;
@@ -20,7 +20,7 @@ in vertexData
 layout (std140) uniform lightsBlock
 {
 	Light lights[MAX_LIGHTS];
-}
+} Lights;
 
 out vec4 outColor;
 
@@ -31,7 +31,7 @@ void main()
 	Light light;
 	for(int i = 0; i < MAX_LIGHTS; ++i)
 	{
-		light = lightsBlock.lights[i];
+		light = Lights.lights[i];
 		vec3 lightDir = light.position.xyz - inData.WorldPos.xyz;
 		float dis = length(lightDir);
 		
@@ -45,5 +45,5 @@ void main()
 		specular += clamp(specIntensity * light.color_power, 0.0, 1.0) * intensity;
 	}
 	
-	outColor = specular + diffuse * inData.Color;
+	outColor = vec4(1.0, 1.0, 1.0, 1.0);//specular + diffuse * inData.Color;
 };

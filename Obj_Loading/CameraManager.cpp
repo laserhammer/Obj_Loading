@@ -1,5 +1,10 @@
 #include "CameraManager.h"
+#include "ResourceManager.h"
 #include "InputManager.h"
+#include <GLEW\GL\glew.h>
+
+CameraBlock CameraManager::_cameraData;
+GLuint CameraManager::_cameraBuffer;
 
 glm::mat4 CameraManager::_proj;
 glm::mat4 CameraManager::_view;
@@ -10,6 +15,10 @@ void CameraManager::Init(float aspectRatio, float fov, float near, float far)
 {
 	_proj = glm::perspectiveFov(fov, aspectRatio, 1.0f / aspectRatio, near, far);
 	_position = glm::vec2(0.0f, 0.0f);
+
+	glGenBuffers(1, &_cameraBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::CAMERA_BIND_POINT, _cameraBuffer);
+	_cameraData = CameraBlock(); 
 }
 
 void CameraManager::Update(float dt)
@@ -34,6 +43,17 @@ void CameraManager::Update(float dt)
 	_camPos = glm::vec4(0.0f, 0.0f, -5.0f, 1.0f) * rotMat;
 
 	_view = glm::lookAt(glm::vec3(_camPos), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+	glm::mat4 viewProjMat = _view * _proj;
+	memcpy(_cameraData.viewProjMat[0], glm::value_ptr(viewProjMat[0]), sizeof(GLfloat) * 4);
+	memcpy(_cameraData.viewProjMat[1], glm::value_ptr(viewProjMat[1]), sizeof(GLfloat) * 4);
+	memcpy(_cameraData.viewProjMat[2], glm::value_ptr(viewProjMat[2]), sizeof(GLfloat) * 4);
+	memcpy(_cameraData.viewProjMat[3], glm::value_ptr(viewProjMat[3]), sizeof(GLfloat) * 4);
+
+	memcpy(_cameraData.camPos, glm::value_ptr(_camPos), sizeof(GLfloat) * 4);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, _cameraBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(_cameraData), &_cameraData, GL_DYNAMIC_DRAW);
 }
 
 glm::mat4 CameraManager::ProjMat()

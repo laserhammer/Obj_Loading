@@ -31,7 +31,7 @@ struct Transform
 class RenderObject
 {
 public:
-	RenderObject(Mesh* mesh = nullptr, Shader* shader = nullptr, GLenum mode = GL_TRIANGLES, GLuint layer = 1, GLuint _uBufferBindPoint = 0);
+	RenderObject(Mesh* mesh = nullptr, Shader* shader = nullptr, GLenum mode = GL_TRIANGLES, GLuint layer = 1);
 	~RenderObject();
 
 	void Update(float dt);

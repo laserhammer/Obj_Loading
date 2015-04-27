@@ -4,7 +4,6 @@
 #include <GLM\gtc\quaternion.hpp>
 
 static const unsigned int MAX_LIGHTS = 8;
-static const unsigned int BINDING_POINT = 1;
 
 struct Light
 {
@@ -36,7 +35,7 @@ class LightingManager
 public:
 	static void Init(GLuint lightsBufferBlockIndex);
 	static void Update(float dt);
-	static Light& GetLight(int index);
+	static Light* GetLight(int index);
 private:
 	static Light _lights[MAX_LIGHTS];
 	static GLfloat _lightBufferData[MAX_LIGHTS * 8];

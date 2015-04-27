@@ -25,6 +25,7 @@ void LightingManager::Init(GLuint lightsBufferBlockIndex)
 	}	
 
 	glGenBuffers(1, &_uLights);
+	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::LIGHTS_BIND_POINT, _uLights);
 }
 void LightingManager::Update(float dt)
 {
@@ -49,11 +50,10 @@ void LightingManager::Update(float dt)
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, _uLights);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(_lightsData), &_lightsData, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, _lightsBufferBlockIndex, BINDING_POINT);
 }
-Light& LightingManager::GetLight(int index)
+Light* LightingManager::GetLight(int index)
 {
-	return _lights[index];
+	return &_lights[index];
 }
 
 	

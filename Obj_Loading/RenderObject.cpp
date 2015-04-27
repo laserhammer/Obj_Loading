@@ -2,18 +2,18 @@
 #include "ResourceManager.h"
 #include <GLM\gtc\type_ptr.hpp>
 
-RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer, GLuint uBufferBindPoint)
+RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer)
 {
 	_mesh = mesh;
 	_shader = shader;
 	_transform = Transform();
-	_transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
+	_transform.position = glm::vec3();
 	_transform.rotation = glm::quat();
 	_transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-	_transform.linearVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	_transform.linearVelocity = glm::vec3();
 	_transform.angularVelocity = glm::quat();
-	_transform.rotationOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
-	_transform.scaleOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
+	_transform.rotationOrigin = glm::vec3();
+	_transform.scaleOrigin = glm::vec3();
 	_transform.translate = glm::mat4();
 	_transform.model = glm::mat4();
 	_transform.parent = nullptr;
@@ -34,11 +34,11 @@ RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer
 
 	glGenBuffers(1, &_perModelBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::PERMODEL_BIND_POINT, _perModelBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(_perModelBlock), &_perModelBlock, GL_DYNAMIC_DRAW);
 
 	_mode = mode;
 	_layer = layer;
-	_uBufferBindPoint = uBufferBindPoint;
 }
 
 RenderObject::~RenderObject()
@@ -67,8 +67,17 @@ void RenderObject::Update(float dt)
 	glm::mat4 scale = glm::inverse(globalTraslateScaleOrigin) * glm::scale(glm::mat4(), _transform.scale) * globalTraslateScaleOrigin;
 
 	_transform.model = parentModel * (_transform.translate * rotate * scale);
-	memcpy(_perModelBlock.modelMat, glm::value_ptr(_transform.model), sizeof(GLfloat) * 16);
-	memcpy(_perModelBlock.invTransModelMat, glm::value_ptr(glm::inverse(glm::transpose(_transform.model))), sizeof(GLfloat) * 16);
+
+	memcpy(_perModelBlock.modelMat[0], glm::value_ptr(_transform.model[0]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.modelMat[1], glm::value_ptr(_transform.model[1]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.modelMat[2], glm::value_ptr(_transform.model[2]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.modelMat[3], glm::value_ptr(_transform.model[3]), sizeof(GLfloat) * 4);
+
+	glm::mat4 invTransModel = glm::inverse(glm::transpose(_transform.model));
+	memcpy(_perModelBlock.invTransModelMat[0], glm::value_ptr(invTransModel[0]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.invTransModelMat[1], glm::value_ptr(invTransModel[1]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.invTransModelMat[2], glm::value_ptr(invTransModel[2]), sizeof(GLfloat) * 4);
+	memcpy(_perModelBlock.invTransModelMat[3], glm::value_ptr(invTransModel[3]), sizeof(GLfloat) * 4);
 }
 
 void RenderObject::Draw()
@@ -77,7 +86,6 @@ void RenderObject::Draw()
 
 	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(_perModelBlock), &_perModelBlock, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, _uBufferBindPoint, _perModelBuffer);
 
 	glUseProgram(_shader->program);
 
@@ -92,6 +100,8 @@ void RenderObject::setColor(glm::vec4 color)
 
 GLenum RenderObject::mode() { return _mode; }
 void RenderObject::mode(GLenum newMode) { _mode = newMode; }
-GLuint RenderObject::uniformBufferBindPoint() { return _uniformBufferBindPoint; }
-void RenderObject::uniformBufferBindPoint(GLuint newBindPoint) { _uniformBufferBindPoint = newBindPoint; }
+GLuint RenderObject::uniformBufferBindPoint() { return _uBufferBindPoint; }
+void RenderObject::uniformBufferBindPoint(GLuint newBindPoint) { _uBufferBindPoint = newBindPoint; }
+GLuint RenderObject::layer() { return _layer; }
+void RenderObject::layer(GLuint newLayer) { _layer = newLayer; }
 

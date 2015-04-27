@@ -19,12 +19,7 @@ struct Shader
 	GLuint program;
 	GLuint uCameraBlockIndex;
 	GLuint uPerModelBlockIndex;
-};
-
-struct CameraBlock
-{
-	float viewProjMat[4][4];
-	float camPos[4];
+	GLuint uLightsBlockIndex;
 };
 
 struct Mesh
@@ -44,6 +39,10 @@ public:
 	static Shader phongShader;
 	static GLuint phongFragShader;
 	static GLuint phongVertShader;
+	static const GLuint PERMODEL_BIND_POINT;
+	static const GLuint LIGHTS_BIND_POINT;
+	static const GLuint CAMERA_BIND_POINT;
+
 	static Mesh sphere;
 
 private:
@@ -51,6 +50,7 @@ private:
 	static GLuint CompileShader(char* shader, GLenum type);
 	static GLuint LinkShaderProgram(GLuint* shaders, int numShaders, GLuint fragDataBindColorNumber, char* fragDataBindName);
 	static void ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVertPos, GLfloat** vertNorm, unsigned int& numVertNorms, GLint*** elements, unsigned int& numElements);
-	static Mesh GenMesh(Vertex* verts, GLuint* elements, GLuint numElements);
+	static void GenMesh(Vertex* verts, GLuint* elements, GLuint numElements, Mesh& mesh);
+	static void GenVertices(Vertex** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements);
 	static void ReleaseMesh(Mesh& mesh);
 };

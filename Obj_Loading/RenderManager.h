@@ -18,5 +18,4 @@ private:
 	static RenderObject* _displayList;
 	static unsigned int _displayListLength;
 	static unsigned int _numInitializedRenderObjects;
-	static const unsigned int UBUFFER_BIND_POINT;
 };
