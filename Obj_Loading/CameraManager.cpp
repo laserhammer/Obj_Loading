@@ -4,7 +4,7 @@
 #include <GLEW\GL\glew.h>
 
 CameraBlock CameraManager::_cameraData;
-GLuint CameraManager::_cameraBuffer;
+GLuint CameraManager::_cameraBufferLocation;
 
 glm::mat4 CameraManager::_proj;
 glm::mat4 CameraManager::_view;
@@ -16,8 +16,8 @@ void CameraManager::Init(float aspectRatio, float fov, float near, float far)
 	_proj = glm::perspectiveFov(fov, aspectRatio, 1.0f / aspectRatio, near, far);
 	_position = glm::vec2(0.0f, 0.0f);
 
-	glGenBuffers(1, &_cameraBuffer);
-	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::CAMERA_BIND_POINT, _cameraBuffer);
+	glGenBuffers(1, &_cameraBufferLocation);
+	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::CAMERA_BIND_POINT, _cameraBufferLocation);
 	_cameraData = CameraBlock(); 
 }
 
@@ -45,15 +45,24 @@ void CameraManager::Update(float dt)
 	_view = glm::lookAt(glm::vec3(_camPos), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	glm::mat4 viewProjMat = _view * _proj;
-	memcpy(_cameraData.viewProjMat[0], glm::value_ptr(viewProjMat[0]), sizeof(GLfloat) * 4);
-	memcpy(_cameraData.viewProjMat[1], glm::value_ptr(viewProjMat[1]), sizeof(GLfloat) * 4);
-	memcpy(_cameraData.viewProjMat[2], glm::value_ptr(viewProjMat[2]), sizeof(GLfloat) * 4);
-	memcpy(_cameraData.viewProjMat[3], glm::value_ptr(viewProjMat[3]), sizeof(GLfloat) * 4);
+	_cameraData.viewProjMat = viewProjMat;
+	_cameraData.camPos = _camPos;
 
-	memcpy(_cameraData.camPos, glm::value_ptr(_camPos), sizeof(GLfloat) * 4);
+	GLsizei vec4size = sizeof(GLfloat) * 4;
+	memcpy(ResourceManager::cameraBuffer, glm::value_ptr(_cameraData.viewProjMat[0]), vec4size);
+	memcpy(ResourceManager::cameraBuffer + vec4size, glm::value_ptr(_cameraData.viewProjMat[1]), vec4size);
+	memcpy(ResourceManager::cameraBuffer + vec4size * 2, glm::value_ptr(_cameraData.viewProjMat[2]), vec4size);
+	memcpy(ResourceManager::cameraBuffer + vec4size * 3, glm::value_ptr(_cameraData.viewProjMat[3]), vec4size);
 
-	glBindBuffer(GL_UNIFORM_BUFFER, _cameraBuffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(_cameraData), &_cameraData, GL_DYNAMIC_DRAW);
+	memcpy(ResourceManager::cameraBuffer + vec4size * 4, glm::value_ptr(_cameraData.camPos), vec4size);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, _cameraBufferLocation);
+	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::cameraBufferSize, &ResourceManager::cameraBuffer, GL_DYNAMIC_DRAW);
+}
+
+void CameraManager::DumpData()
+{
+	glDeleteBuffers(1, &_cameraBufferLocation);
 }
 
 glm::mat4 CameraManager::ProjMat()

@@ -12,25 +12,87 @@ const GLuint ResourceManager::PERMODEL_BIND_POINT = 0;
 const GLuint ResourceManager::LIGHTS_BIND_POINT = 1;
 const GLuint ResourceManager::CAMERA_BIND_POINT = 2;
 
+GLubyte* ResourceManager::perModelBuffer;
+GLubyte* ResourceManager::cameraBuffer;
+GLubyte* ResourceManager::lightsBuffer;
+
+GLint ResourceManager::perModelBufferSize;
+GLint ResourceManager::cameraBufferSize;
+GLint ResourceManager::lightsBufferSize;
+
+GLfloat vertices[] = {
+	-1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f
+};
+
+GLuint elements[] = {
+	// Front
+	0, 1, 2,
+	1, 3, 2,
+
+	// Back
+	6, 5, 4,
+	6, 7, 5,
+
+	// Top
+	4, 5, 0,
+	1, 0, 5,
+
+	// Bottom
+	7, 2, 3,
+	7, 6, 2,
+
+	// Right
+	1, 5, 7,
+	7, 3, 1,
+
+	// Left
+	6, 4, 0,
+	0, 2, 6,
+};
+
 
 void ResourceManager::Init()
 {
-	char* sphereObj = ReadTextFile("../Resources/meshes/Sphere.obj");
-	GLfloat *vertPos = nullptr;
-	unsigned int numVertPos;
-	GLfloat *vertNorms = nullptr;
-	unsigned int numVertNorms;
-	GLint **elements = nullptr;
-	unsigned int numElements;
-	ParseOBJ(sphereObj, &vertPos, numVertPos, &vertNorms, numVertNorms, (GLint***)&elements, numElements);
+	//char* sphereObj = ReadTextFile("../Resources/meshes/Sphere.obj");
+	//GLfloat *vertPos = nullptr;
+	//unsigned int numVertPos;
+	//GLfloat *vertNorms = nullptr;
+	//unsigned int numVertNorms;
+	//GLint **elements = nullptr;
+	//unsigned int numElements;
+	//ParseOBJ(sphereObj, &vertPos, numVertPos, &vertNorms, numVertNorms, (GLint***)&elements, numElements);
 
-	Vertex* verts = nullptr;
-	unsigned int numVerts;
-	GLuint* vertElements = nullptr;
-	GenVertices(&verts, numVerts, &vertElements, vertPos, vertNorms, numVertNorms, (GLint**)elements, numElements);
+	//GLfloat* verts = nullptr;
+	//unsigned int numVerts;
+	//GLuint* vertElements = nullptr;
+	//GenVertices(&verts, numVerts, &vertElements, vertPos, vertNorms, numVertNorms, (GLint**)elements, numElements);
 
-	GenMesh(verts, vertElements, numElements, sphere);
+	//GenMesh(verts, numVerts, vertElements, numElements, sphere);
 
+	//GenMesh(vertices, 8, elements, 36, sphere);
+
+	sphere = Mesh();
+
+	glGenVertexArrays(1, &sphere.vao);
+	glBindVertexArray(sphere.vao);
+
+	glGenBuffers(1, &sphere.vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, sphere.vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 8 * 8, vertices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &sphere.ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere.ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 36, elements, GL_STATIC_DRAW);
+
+	sphere.count = 36;
+	/*
 	delete[] verts;
 	delete[] vertElements;
 
@@ -41,7 +103,7 @@ void ResourceManager::Init()
 	{
 		delete[] elements[i];
 	}
-	delete[] elements;
+	delete[] elements;*/
 
 	GLuint shaders[2];
 	
@@ -54,12 +116,21 @@ void ResourceManager::Init()
 	phongShader = Shader();
 	phongShader.program = LinkShaderProgram(shaders, 2, 0, "outColor");
 
+
 	phongShader.uPerModelBlockIndex = glGetUniformBlockIndex(phongShader.program, "perModel");
 	glUniformBlockBinding(phongShader.program, phongShader.uPerModelBlockIndex, PERMODEL_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.program, phongShader.uPerModelBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &perModelBufferSize);
+	perModelBuffer = new GLubyte[perModelBufferSize];
+
 	phongShader.uCameraBlockIndex = glGetUniformBlockIndex(phongShader.program, "camera");
 	glUniformBlockBinding(phongShader.program, phongShader.uCameraBlockIndex, CAMERA_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.program, phongShader.uCameraBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &cameraBufferSize);
+	cameraBuffer = new GLubyte[cameraBufferSize];
+
 	phongShader.uLightsBlockIndex = glGetUniformBlockIndex(phongShader.program, "lightsBlock");
 	glUniformBlockBinding(phongShader.program, phongShader.uLightsBlockIndex, LIGHTS_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.program, phongShader.uLightsBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &lightsBufferSize);
+	lightsBuffer = new GLubyte[lightsBufferSize];
 
 
 	GLuint posAttrib = glGetAttribLocation(phongShader.program, "position");
@@ -81,6 +152,10 @@ void ResourceManager::DumpData()
 	glDeleteShader(phongFragShader);
 	glDeleteShader(phongVertShader);
 	glDeleteProgram(phongShader.program);
+
+	delete[] cameraBuffer;
+	delete[] lightsBuffer;
+	delete[] perModelBuffer;
 }
 
 char* ResourceManager::ReadTextFile(const char* filepath)
@@ -360,9 +435,6 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 					for (int i = 0; i < elementStorage; ++i)
 					{
 						memcpy((*elements)[i], temp[i], sizeof(GLuint) * 3);
-						//(*elements)[i][0] = temp[i][0];
-						//(*elements)[i][1] = temp[i][1];
-						//(*elements)[i][2] = temp[i][2];
 					}
 					for (int i = 0; i < elementStorage; ++i)
 					{
@@ -376,7 +448,6 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 				elementItr = 0;
 				for (term = 1; term < numTerms; ++term)
 				{
-					//(*elements)[vertEle] = new GLint[3];
 					elementIndex = 0;
 					for (termItr = 0; terms[term][termItr]; ++termItr)
 					{
@@ -405,7 +476,7 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 	}
 }
 
-void ResourceManager::GenMesh(Vertex* verts, GLuint* elements, GLuint numElements, Mesh& mesh)
+void ResourceManager::GenMesh(GLfloat* verts, GLuint numVerts, GLuint* elements, GLuint numElements, Mesh& mesh)
 {
 	mesh = Mesh();
 	
@@ -414,16 +485,16 @@ void ResourceManager::GenMesh(Vertex* verts, GLuint* elements, GLuint numElement
 
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), &verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVerts * 8, verts, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), &elements, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * numElements, elements, GL_STATIC_DRAW);
 
 	mesh.count = numElements;
 }
 
-void ResourceManager::GenVertices(Vertex** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements)
+void ResourceManager::GenVertices(GLfloat** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements)
 {
 	int vertStorage = numVerts >= numVertNorms ? numVerts : numVertNorms;
 	*vertElements = new GLuint[numElements];
@@ -448,7 +519,8 @@ void ResourceManager::GenVertices(Vertex** verts, unsigned int& numVerts, GLuint
 		}
 	}
 
-	*verts = new Vertex[uniqueElementCount];
+	*verts = new GLfloat[uniqueElementCount];
+	numVerts = uniqueElementCount;
 	unsigned int vertElement, u, posValueIndex, normValueIndex;
 	u = 0;
 	for (unsigned int i = 0; i < numElements; ++i)
@@ -458,17 +530,17 @@ void ResourceManager::GenVertices(Vertex** verts, unsigned int& numVerts, GLuint
 			vertElement = (*vertElements)[i];
 			posValueIndex = (elements[vertElement][0] - 1) * 3;
 			normValueIndex = (elements[vertElement][2] - 1) * 3;
-			(*verts)[u] = Vertex();
-			(*verts)[u].posX = vertPos[posValueIndex];
-			(*verts)[u].posY = vertPos[posValueIndex + 1];
-			(*verts)[u].posZ = vertPos[posValueIndex + 2];
+			
+			(*verts)[u * 8] = vertPos[posValueIndex];
+			(*verts)[u * 8 + 1] = vertPos[posValueIndex + 1];
+			(*verts)[u * 8 + 2] = vertPos[posValueIndex + 2];
 
-			(*verts)[u].texCoordU = 0.0f;
-			(*verts)[u].texCoordV = 0.0f;
+			(*verts)[u * 8 + 3] = 0.0f;
+			(*verts)[u * 8 + 4] = 0.0f;
 
-			(*verts)[u].normX = vertNorms[normValueIndex];
-			(*verts)[u].normY = vertNorms[normValueIndex + 1];
-			(*verts)[u].normZ = vertNorms[normValueIndex + 2];
+			(*verts)[u * 8 + 5] = vertNorms[normValueIndex];
+			(*verts)[u * 8 + 6] = vertNorms[normValueIndex + 1];
+			(*verts)[u * 8 + 7] = vertNorms[normValueIndex + 2];
 			++u;
 		}
 		else

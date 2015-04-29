@@ -5,8 +5,10 @@
 
 struct CameraBlock
 {
-	float viewProjMat[4][4];
-	float camPos[4];
+	//float viewProjMat[4][4];
+	//float camPos[4];
+	glm::mat4 viewProjMat;
+	glm::vec4 camPos;
 };
 
 class CameraManager
@@ -14,6 +16,7 @@ class CameraManager
 public:
 	static void Init(float aspectRatio, float fov, float near, float far);
 	static void Update(float dt);
+	static void DumpData(); 
 	static glm::mat4 ViewMat();
 	static glm::mat4 ProjMat();
 	static glm::vec4 CamPos();
@@ -25,5 +28,5 @@ private:
 	static glm::vec2 _position;
 
 	static CameraBlock _cameraData;
-	static GLuint _cameraBuffer;
+	static GLuint _cameraBufferLocation;
 };

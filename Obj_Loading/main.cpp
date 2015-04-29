@@ -50,6 +50,7 @@ void init()
 	glewInit();
 
 	ResourceManager::Init();
+	RenderManager::Init(1);
 
 	glfwSetTime(0.0);
 
@@ -58,6 +59,8 @@ void init()
 	srand((unsigned int)timer);
 
 	InitLights();
+
+	sphere = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
 
 	//generateTeapot();
 
@@ -108,6 +111,8 @@ void cleanUp()
 
 	//delete teapot;
 	ResourceManager::DumpData();
+	CameraManager::DumpData();
+	LightingManager::DumpData();
 
 	glfwTerminate();
 }

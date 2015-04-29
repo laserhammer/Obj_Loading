@@ -25,7 +25,7 @@ RenderObject* RenderManager::InitRenderObject(Mesh* mesh, Shader* shader, GLenum
 		++_displayListLength;
 	}
 
-	RenderObject* retObj = &(_displayList[_numInitializedRenderObjects] = RenderObject(mesh, shader, mode, layer));
+	RenderObject* retObj = &(_displayList[_numInitializedRenderObjects++] = RenderObject(mesh, shader, mode, layer));
 	return retObj;
 }
 

@@ -9,9 +9,12 @@ struct CameraBlock;
 
 struct PerModelBlock
 {
-	float modelMat[4][4];
-	float invTransModelMat[4][4];
-	float color[4];
+	//float modelMat[4][4];
+	//float invTransModelMat[4][4];
+	//float color[4];
+	glm::mat4 modelMat;
+	glm::mat4 inTransModelMat;
+	glm::vec4 color;
 };
 
 struct Transform
@@ -45,17 +48,14 @@ public:
 	void useDepthTest(bool usingDepth);
 	GLenum mode();
 	void mode(GLenum newMode);
-	GLuint uniformBufferBindPoint();
-	void uniformBufferBindPoint(GLuint newBindPoint);
 	GLuint layer();
 	void layer(GLuint newLayer);
 private:
 	Mesh* _mesh;
 	Shader* _shader;
 	PerModelBlock _perModelBlock;
-	GLuint _perModelBuffer;
+	GLuint _perModelBufferLocation;
 	Transform _transform;
 	GLenum _mode;
-	GLuint _uBufferBindPoint;
 	GLuint _layer;
 };

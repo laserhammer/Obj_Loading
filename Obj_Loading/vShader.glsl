@@ -8,14 +8,14 @@ layout (std140) uniform camera
 {
 	mat4 viewProjMat;
 	vec4 camPos;
-}Camera;
+};
 
 layout (std140) uniform perModel
 {
 	mat4 modelMat;
 	mat4 invTransModelMat;
 	vec4 color;
-}PerModel;
+};
 
 out vertexData
 {
@@ -23,13 +23,13 @@ out vertexData
 	vec4 Normal;
 	vec4 WorldPos;
 	vec4 CamPos;
-} outData;
+} ;
 
 void main()
 {
-	outData.Color = PerModel.color;
-	outData.Normal =  PerModel.invTransModelMat * vec4(normal.xyz, 0.0);
-	outData.WorldPos = PerModel.modelMat * vec4(position.xyz, 1.0);
-	outData.CamPos = Camera.camPos;
-	gl_Position = Camera.viewProjMat * PerModel.modelMat * vec4(position.xyz, 1.0);
+	Color = color;
+	Normal =  invTransModelMat * vec4(normal.xyz, 0.0);
+	WorldPos = modelMat * vec4(position.xyz, 1.0);
+	CamPos = camPos;
+	gl_Position =vec4(position.xyz, 1.0);//viewProjMat * modelMat * vec4(position.xyz, 1.0);
 }

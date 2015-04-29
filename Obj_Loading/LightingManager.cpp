@@ -4,13 +4,11 @@
 #include <GLM\gtc\type_ptr.hpp>
 
 Light LightingManager::_lights[MAX_LIGHTS];
-GLuint LightingManager::_lightsBufferBlockIndex;
-GLuint LightingManager::_uLights;
+GLuint LightingManager::_lightsBufferLocation;
 LightsBlock LightingManager::_lightsData;
 
-void LightingManager::Init(GLuint lightsBufferBlockIndex)
+void LightingManager::Init()
 {
-	_lightsBufferBlockIndex = lightsBufferBlockIndex;
 	for (int i = 0; i < MAX_LIGHTS; ++i)
 	{
 		_lights[i] = Light();
@@ -24,11 +22,13 @@ void LightingManager::Init(GLuint lightsBufferBlockIndex)
 		_lights[i].power = 0.0f;
 	}	
 
-	glGenBuffers(1, &_uLights);
-	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::LIGHTS_BIND_POINT, _uLights);
+	glGenBuffers(1, &_lightsBufferLocation);
+	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::LIGHTS_BIND_POINT, _lightsBufferLocation);
 }
 void LightingManager::Update(float dt)
 {
+	GLsizei lightSize = sizeof(GLfloat) * 12;
+	GLsizei vec4Size = sizeof(GLfloat) * 4;
 	for (int i = 0; i < MAX_LIGHTS; ++i)
 	{
 		_lights[i].position += _lights[i].linearVelocity * dt;
@@ -41,16 +41,24 @@ void LightingManager::Update(float dt)
 
 		_lights[i].transformPos = translateMat * rotateMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		memcpy(&_lightsData.lights[i].position, glm::value_ptr(_lights[i].position), sizeof(GLfloat) * 3);
-		_lightsData.lights[i].position[3] = 1.0f;
-		memcpy(&_lightsData.lights[i].color_power, glm::value_ptr(_lights[i].color), sizeof(GLfloat) * 3);
-		_lightsData.lights[i].color_power[3] = _lights[i].power;
-		memcpy(&_lightsData.lights[i].ambient, glm::value_ptr(_lights[i].ambient), sizeof(GLfloat) * 3);
-		_lightsData.lights[i].ambient[3] = 1.0f;
+		_lightsData.lights[i].position = glm::vec4(_lights[i].position, 1.0f);
+		_lightsData.lights[i].color_power = glm::vec4(_lights[i].color.swizzle(glm::comp::X, glm::comp::Y, glm::comp::Z), _lights[i].power);
+		_lightsData.lights[i].ambient = _lights[i].ambient;
+
+		memcpy(ResourceManager::lightsBuffer + lightSize * i, glm::value_ptr(_lightsData.lights[i].position), vec4Size);
+		memcpy(ResourceManager::lightsBuffer + lightSize * i + vec4Size, glm::value_ptr(_lightsData.lights[i].color_power), vec4Size);
+		memcpy(ResourceManager::lightsBuffer + lightSize * i + vec4Size * 2, glm::value_ptr(_lightsData.lights[i].ambient), vec4Size);
+
 	}
-	glBindBuffer(GL_UNIFORM_BUFFER, _uLights);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(_lightsData), &_lightsData, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, _lightsBufferLocation);
+	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::lightsBufferSize, &ResourceManager::lightsBuffer, GL_DYNAMIC_DRAW);
 }
+
+void LightingManager::DumpData()
+{
+	glDeleteBuffers(1, &_lightsBufferLocation);
+}
+
 Light* LightingManager::GetLight(int index)
 {
 	return &_lights[index];

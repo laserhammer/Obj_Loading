@@ -20,9 +20,12 @@ struct Light
 
 struct UniformLight
 {
-	GLfloat position[4];
-	GLfloat color_power[4];
-	GLfloat ambient[4];
+	//GLfloat position[4];
+	//GLfloat color_power[4];
+	//GLfloat ambient[4];
+	glm::vec4 position;
+	glm::vec4 color_power;
+	glm::vec4 ambient;
 };
 
 struct LightsBlock
@@ -33,14 +36,14 @@ struct LightsBlock
 class LightingManager
 {
 public:
-	static void Init(GLuint lightsBufferBlockIndex);
+	static void Init();
 	static void Update(float dt);
+	static void DumpData();
 	static Light* GetLight(int index);
 private:
 	static Light _lights[MAX_LIGHTS];
 	static GLfloat _lightBufferData[MAX_LIGHTS * 8];
 
-	static GLuint _lightsBufferBlockIndex;
-	static GLuint _uLights;
+	static GLuint _lightsBufferLocation;
 	static LightsBlock _lightsData;
 };

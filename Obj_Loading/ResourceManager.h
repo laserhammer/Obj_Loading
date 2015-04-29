@@ -42,6 +42,12 @@ public:
 	static const GLuint PERMODEL_BIND_POINT;
 	static const GLuint LIGHTS_BIND_POINT;
 	static const GLuint CAMERA_BIND_POINT;
+	static GLubyte* perModelBuffer;
+	static GLubyte* cameraBuffer;
+	static GLubyte* lightsBuffer;
+	static GLint perModelBufferSize;
+	static GLint cameraBufferSize;
+	static GLint lightsBufferSize;
 
 	static Mesh sphere;
 
@@ -50,7 +56,7 @@ private:
 	static GLuint CompileShader(char* shader, GLenum type);
 	static GLuint LinkShaderProgram(GLuint* shaders, int numShaders, GLuint fragDataBindColorNumber, char* fragDataBindName);
 	static void ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVertPos, GLfloat** vertNorm, unsigned int& numVertNorms, GLint*** elements, unsigned int& numElements);
-	static void GenMesh(Vertex* verts, GLuint* elements, GLuint numElements, Mesh& mesh);
-	static void GenVertices(Vertex** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements);
+	static void GenMesh(GLfloat* verts, GLuint numVerts, GLuint* elements, GLuint numElements, Mesh& mesh);
+	static void GenVertices(GLfloat** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements);
 	static void ReleaseMesh(Mesh& mesh);
 };
