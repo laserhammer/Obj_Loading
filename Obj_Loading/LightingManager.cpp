@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 #include "RenderManager.h"
 #include <GLM\gtc\type_ptr.hpp>
+#include <string>
 
 Light LightingManager::_lights[MAX_LIGHTS];
 GLuint LightingManager::_lightsBufferLocation;
@@ -20,6 +21,20 @@ void LightingManager::Init()
 		_lights[i].transformPos = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		_lights[i].color = glm::vec4();
 		_lights[i].power = 0.0f;
+
+		std::string currentLight = "lights[";
+		char numStringBuffer[32];
+		itoa(i, numStringBuffer, 10);
+		currentLight += numStringBuffer;
+		currentLight += "].";
+		std::string pos = "position";
+		std::string col = "color";
+		std::string pow = "power";
+		std::string amb = "ambient";
+		_lights[i].uPosition = glGetUniformLocation(ResourceManager::phongShader.shaderPointer, (currentLight + pos).c_str());
+		_lights[i].uColor = glGetUniformLocation(ResourceManager::phongShader.shaderPointer, (currentLight + col).c_str());
+		_lights[i].uPower = glGetUniformLocation(ResourceManager::phongShader.shaderPointer, (currentLight + pow).c_str());
+		_lights[i].uAmbient = glGetUniformLocation(ResourceManager::phongShader.shaderPointer, (currentLight + amb).c_str());
 	}	
 
 	glGenBuffers(1, &_lightsBufferLocation);
@@ -45,9 +60,14 @@ void LightingManager::Update(float dt)
 		_lightsData.lights[i].color_power = glm::vec4(_lights[i].color.swizzle(glm::comp::X, glm::comp::Y, glm::comp::Z), _lights[i].power);
 		_lightsData.lights[i].ambient = _lights[i].ambient;
 
-		memcpy(ResourceManager::lightsBuffer + lightSize * i, glm::value_ptr(_lightsData.lights[i].position), vec4Size);
+		/*memcpy(ResourceManager::lightsBuffer + lightSize * i, glm::value_ptr(_lightsData.lights[i].position), vec4Size);
 		memcpy(ResourceManager::lightsBuffer + lightSize * i + vec4Size, glm::value_ptr(_lightsData.lights[i].color_power), vec4Size);
-		memcpy(ResourceManager::lightsBuffer + lightSize * i + vec4Size * 2, glm::value_ptr(_lightsData.lights[i].ambient), vec4Size);
+		memcpy(ResourceManager::lightsBuffer + lightSize * i + vec4Size * 2, glm::value_ptr(_lightsData.lights[i].ambient), vec4Size);*/
+
+		glUniform4fv(_lights[i].uPosition, 1, glm::value_ptr(_lights[i].transformPos));
+		glUniform4fv(_lights[i].uColor, 1, glm::value_ptr(_lights[i].color));
+		glUniform1f(_lights[i].uPower, _lights[i].power);
+		glUniform4fv(_lights[i].uAmbient, 1, glm::value_ptr(_lights[i].ambient));
 
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, _lightsBufferLocation);

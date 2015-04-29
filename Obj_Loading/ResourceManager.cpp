@@ -21,14 +21,14 @@ GLint ResourceManager::cameraBufferSize;
 GLint ResourceManager::lightsBufferSize;
 
 GLfloat vertices[] = {
-	-1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f
+	-1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
+	-1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
+	+1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 1.0f
 };
 
 GLuint elements[] = {
@@ -60,50 +60,17 @@ GLuint elements[] = {
 
 void ResourceManager::Init()
 {
-	//char* sphereObj = ReadTextFile("../Resources/meshes/Sphere.obj");
-	//GLfloat *vertPos = nullptr;
-	//unsigned int numVertPos;
-	//GLfloat *vertNorms = nullptr;
-	//unsigned int numVertNorms;
-	//GLint **elements = nullptr;
-	//unsigned int numElements;
-	//ParseOBJ(sphereObj, &vertPos, numVertPos, &vertNorms, numVertNorms, (GLint***)&elements, numElements);
+	char* sphereObj = ReadTextFile("../Resources/meshes/Sphere.obj");
+	std::vector<GLfloat> vertPos = std::vector<GLfloat>();
+	std::vector<GLfloat> vertNorms = std::vector<GLfloat>();
+	std::vector<GLint> elements = std::vector<GLint>();
+	ParseOBJ(sphereObj, &vertPos, &vertNorms, &elements);
 
-	//GLfloat* verts = nullptr;
-	//unsigned int numVerts;
-	//GLuint* vertElements = nullptr;
-	//GenVertices(&verts, numVerts, &vertElements, vertPos, vertNorms, numVertNorms, (GLint**)elements, numElements);
+	std::vector<GLfloat> verts = std::vector<GLfloat>();
+	std::vector<GLint> vertElements = std::vector<GLint>();
+	GenVertices(&verts, &vertElements, &vertPos, &vertNorms, &elements);
 
-	//GenMesh(verts, numVerts, vertElements, numElements, sphere);
-
-	//GenMesh(vertices, 8, elements, 36, sphere);
-
-	sphere = Mesh();
-
-	glGenVertexArrays(1, &sphere.vao);
-	glBindVertexArray(sphere.vao);
-
-	glGenBuffers(1, &sphere.vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, sphere.vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 8 * 8, vertices, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &sphere.ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 36, elements, GL_STATIC_DRAW);
-
-	sphere.count = 36;
-	/*
-	delete[] verts;
-	delete[] vertElements;
-
-	delete[] sphereObj;
-	delete[] vertPos;
-	delete[] vertNorms;
-	for (unsigned int i = 0; i < numElements; ++i)
-	{
-		delete[] elements[i];
-	}
-	delete[] elements;*/
+	GenMesh(&verts, &elements, sphere);
 
 	GLuint shaders[2];
 	
@@ -114,6 +81,21 @@ void ResourceManager::Init()
 	shaders[1] = phongVertShader;
 
 	phongShader = Shader();
+	phongShader.shaderPointer = LinkShaderProgram(shaders, 2, 0, "outColor");;
+	phongShader.uModelMat = glGetUniformLocation(phongShader.shaderPointer, "modelMat");
+	phongShader.uViewMat = glGetUniformLocation(phongShader.shaderPointer, "viewMat");
+	phongShader.uProjMat = glGetUniformLocation(phongShader.shaderPointer, "projMat");
+	phongShader.uColor = glGetUniformLocation(phongShader.shaderPointer, "color");
+	phongShader.uCamPos = glGetUniformLocation(phongShader.shaderPointer, "camPos");
+
+	GLint posAttrib = glGetAttribLocation(phongShader.shaderPointer, "position");
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+
+	GLint normAttrib = glGetAttribLocation(phongShader.shaderPointer, "normal");
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+	/*
 	phongShader.program = LinkShaderProgram(shaders, 2, 0, "outColor");
 
 
@@ -133,17 +115,18 @@ void ResourceManager::Init()
 	lightsBuffer = new GLubyte[lightsBufferSize];
 
 
-	GLuint posAttrib = glGetAttribLocation(phongShader.program, "position");
+	GLint posAttrib = glGetAttribLocation(phongShader.program, "position");
 	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, 0);
 
-	GLuint texAttrib = glGetAttribLocation(phongShader.program, "texCoord");
+	GLint texAttrib = glGetAttribLocation(phongShader.program, "texCoord");
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, sizeof(GLfloat) * 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 3));
 
-	GLuint normAttrib = glGetAttribLocation(phongShader.program, "normal");
+	GLint normAttrib = glGetAttribLocation(phongShader.program, "normal");
 	glEnableVertexAttribArray(normAttrib);
-	glVertexAttribPointer(normAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 5));
+	glVertexAttribPointer(normAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 5));*/
+
 }
 
 void ResourceManager::DumpData()
@@ -151,7 +134,8 @@ void ResourceManager::DumpData()
 	ReleaseMesh(sphere);
 	glDeleteShader(phongFragShader);
 	glDeleteShader(phongVertShader);
-	glDeleteProgram(phongShader.program);
+	//glDeleteProgram(phongShader.program);
+	glDeleteProgram(phongShader.shaderPointer);
 
 	delete[] cameraBuffer;
 	delete[] lightsBuffer;
@@ -310,43 +294,32 @@ unsigned int StringToUnsiginedInt(const char* string)
 	return retInt;
 }
 
-void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVertPos, GLfloat** vertNorm, unsigned int& numVertNorms, GLint*** elements, unsigned int& numElements)
+void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorm, std::vector<GLint>* elements)
 {
-	numVertPos= 0;
-	numVertNorms = 0;
-	numElements = 0;
-
-	int vertPosStorage = 300;
-	int vertNormStorage = 300;
-	int elementStorage = 100;
-
-	*vertPos = new GLfloat[vertPosStorage];
-	*vertNorm = new GLfloat[vertNormStorage];
-	*elements = (GLint**)(new GLint[elementStorage][3]);
-	for (int i = 0; i < elementStorage; ++i)
+	vertPos->reserve(300);
+	vertNorm->reserve(300);
+	elements->reserve(300);
+	int maxNumTerms = 5;
+	int term, termItr, lineItr, elementItr;
+	char currentChar, line[255], elementString[32];
+	std::vector<char*> terms = std::vector<char*>();
+	terms.resize(maxNumTerms);
+	for (int i = 0; i < maxNumTerms; ++i)
 	{
-		(*elements)[i] = new GLint[3];
+		terms[i] = new char[32];
 	}
-
-	int vert, norm, vertEle, elementIndex, numTerms, term, termItr, lineItr, elementItr;
-	char currentChar, line[255], (*terms)[32], elementString[32];
-	vert = 0;
-	norm = 0;
-	vertEle = 0;
 	for (int i = 0; obj[i]; ++i)
 	{
 		currentChar = obj[i];
 		if (currentChar != '\n')
 		{
 			// Get the line we're on and put it in its own string
-			numTerms = 1;
 			for (int j = 0;; ++j, ++i)
 			{
 				currentChar = obj[i];
 				if (currentChar != '\n' && currentChar)
 				{
 					line[j] = currentChar;
-					numTerms += currentChar == ' ';
 				}
 				else
 				{
@@ -361,7 +334,7 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 			}
 
 			// Parse the line by ' ' and put each value into its own string
-			terms = new char[numTerms][32];
+		
 			term = 0;
 			termItr = 0;
 			lineItr = 0;
@@ -384,79 +357,34 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 			// The first term will determine what type of data follows
 			if (terms[0][0] == 'v'&& !terms[0][1])
 			{
-				// Position, store in vertPos
-				if (vert + 3 >= vertPosStorage)
-				{
-					GLfloat *temp = *vertPos;
-					*vertPos = new GLfloat[vertPosStorage * 2];
-					memcpy(*vertPos, temp, sizeof(GLfloat) * vertPosStorage);
-					vertPosStorage *= 2;
-					delete[] temp;
-				}
-				(*vertPos)[vert] = StringToFloat(terms[1]);
-				(*vertPos)[vert + 1] = StringToFloat(terms[2]);
-				(*vertPos)[vert + 2] = StringToFloat(terms[3]);
-				++numVertPos;
-				vert += 3;
-				delete[] terms;
+				// Vertex store in the vertPos vector
+				vertPos->push_back(StringToFloat(terms[1]));
+				vertPos->push_back(StringToFloat(terms[2]));
+				vertPos->push_back(StringToFloat(terms[3]));
 			}
 
 			if (terms[0][0] == 'v' && terms[0][1] == 'n')
 			{
 				// Normal, store in vertNorm
-				if (norm + 3 >= vertNormStorage)
-				{
-					GLfloat *temp = *vertNorm;
-					*vertNorm = new GLfloat[vertNormStorage * 2];
-					memcpy(*vertNorm, temp, sizeof(GLfloat) * vertNormStorage);
-					vertNormStorage *= 2;
-					delete[] temp;
-				}
-				(*vertNorm)[norm] = StringToFloat(terms[1]);
-				(*vertNorm)[norm + 1] = StringToFloat(terms[2]);
-				(*vertNorm)[norm + 2] = StringToFloat(terms[3]);
-				++numVertNorms;
-				norm += 3;
-				delete[] terms;
+				vertNorm->push_back(StringToFloat(terms[1]));
+				vertNorm->push_back(StringToFloat(terms[2]));
+				vertNorm->push_back(StringToFloat(terms[3]));
 			}
 
 			if (terms[0][0] == 'f')
 			{
 				// Face, store in elements
-				if (vertEle + 4 >= elementStorage)
-				{
-					GLint** temp = *elements;
-					*elements = (GLint**)new GLint[elementStorage * 2][3];
-					for (int i = 0; i < elementStorage * 2; ++i)
-					{
-						(*elements)[i] = new GLint[3];
-					}
-					
-					for (int i = 0; i < elementStorage; ++i)
-					{
-						memcpy((*elements)[i], temp[i], sizeof(GLuint) * 3);
-					}
-					for (int i = 0; i < elementStorage; ++i)
-					{
-						delete[] temp[i];
-					}
-					elementStorage *= 2;
-					delete[] temp;
-				}
-				
 				// Parse each of the terms in the terms array by '\' and store the resulting value in elements
 				elementItr = 0;
-				for (term = 1; term < numTerms; ++term)
+				for (term = 1; term < 5; ++term)
 				{
-					elementIndex = 0;
 					for (termItr = 0; terms[term][termItr]; ++termItr)
 					{
 						if (terms[term][termItr] == '/' )
 						{
 							elementString[elementItr] = '\0';
-							(*elements)[vertEle][elementIndex] = StringToUnsiginedInt(elementString);
+							elements->push_back(StringToUnsiginedInt(elementString));
 							elementItr = 0;
-							++elementIndex;
 						}
 						else
 						{
@@ -466,17 +394,19 @@ void ResourceManager::ParseOBJ(char* obj, GLfloat** vertPos, unsigned int& numVe
 					}
 					// Add last element
 					elementString[elementItr] = '\0';
-					(*elements)[vertEle][elementIndex] = StringToUnsiginedInt(elementString);
+					elements->push_back(StringToUnsiginedInt(elementString));
 					elementItr = 0;
-					++numElements;
-					++vertEle;
 				}
 			}
 		}
 	}
+	for (int i = 0; i < maxNumTerms; ++i)
+	{
+		delete[] terms[i];
+	}
 }
 
-void ResourceManager::GenMesh(GLfloat* verts, GLuint numVerts, GLuint* elements, GLuint numElements, Mesh& mesh)
+void ResourceManager::GenMesh(std::vector<GLfloat>* verts, std::vector<GLint>* elements, Mesh& mesh)
 {
 	mesh = Mesh();
 	
@@ -485,33 +415,33 @@ void ResourceManager::GenMesh(GLfloat* verts, GLuint numVerts, GLuint* elements,
 
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVerts * 8, verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(*verts), verts, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * numElements, elements, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*elements), elements, GL_STATIC_DRAW);
 
-	mesh.count = numElements;
+	mesh.count = elements->size();
 }
 
-void ResourceManager::GenVertices(GLfloat** verts, unsigned int& numVerts, GLuint** vertElements, GLfloat* vertPos, GLfloat* vertNorms, unsigned int numVertNorms, GLint** elements, unsigned int numElements)
+void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements)
 {
-	int vertStorage = numVerts >= numVertNorms ? numVerts : numVertNorms;
-	*vertElements = new GLuint[numElements];
+	unsigned int numElements = elements->size() / 3;
+	vertElements->resize(numElements);
 	unsigned int uniqueElementCount = 0;
 	bool commonVert, commonUV, commonNorm;
 	for (unsigned int i = 0; i < numElements; ++i)
 	{
-		if ((*vertElements)[i] > i)
+		if ((*vertElements)[i] == 0)
 		{
 			(*vertElements)[i] = uniqueElementCount++;
 		}
 		// Compare each element to all other elements to find common verts
 		for (unsigned int j = i + 1; j < numElements; ++j)
 		{
-			commonVert = elements[i][0] == elements[j][0];
-			commonUV = elements[i][1] == elements[j][1];
-			commonNorm = elements[i][2] == elements[j][2];
+			commonVert = (*elements)[i * 3] == (*elements)[j * 3];
+			commonUV = (*elements)[i * 3 + 1] == (*elements)[j * 3 + 1];
+			commonNorm = (*elements)[i * 3 + 2] == (*elements)[j * 3 + 2];
 			if (commonVert && commonUV && commonNorm)
 			{
 				(*vertElements)[j] = (*vertElements)[i];
@@ -519,8 +449,7 @@ void ResourceManager::GenVertices(GLfloat** verts, unsigned int& numVerts, GLuin
 		}
 	}
 
-	*verts = new GLfloat[uniqueElementCount];
-	numVerts = uniqueElementCount;
+	verts->resize(uniqueElementCount * 8);
 	unsigned int vertElement, u, posValueIndex, normValueIndex;
 	u = 0;
 	for (unsigned int i = 0; i < numElements; ++i)
@@ -528,19 +457,19 @@ void ResourceManager::GenVertices(GLfloat** verts, unsigned int& numVerts, GLuin
 		if ((*vertElements)[i] == u)
 		{
 			vertElement = (*vertElements)[i];
-			posValueIndex = (elements[vertElement][0] - 1) * 3;
-			normValueIndex = (elements[vertElement][2] - 1) * 3;
+			posValueIndex = ((*elements)[vertElement * 3] - 1) * 3;
+			normValueIndex = ((*elements)[vertElement * 3 + 2] - 1) * 3;
 			
-			(*verts)[u * 8] = vertPos[posValueIndex];
-			(*verts)[u * 8 + 1] = vertPos[posValueIndex + 1];
-			(*verts)[u * 8 + 2] = vertPos[posValueIndex + 2];
+			(*verts)[u * 8] = (*vertPos)[posValueIndex];
+			(*verts)[u * 8 + 1] = (*vertPos)[posValueIndex + 1];
+			(*verts)[u * 8 + 2] = (*vertPos)[posValueIndex + 2];
 
 			(*verts)[u * 8 + 3] = 0.0f;
 			(*verts)[u * 8 + 4] = 0.0f;
 
-			(*verts)[u * 8 + 5] = vertNorms[normValueIndex];
-			(*verts)[u * 8 + 6] = vertNorms[normValueIndex + 1];
-			(*verts)[u * 8 + 7] = vertNorms[normValueIndex + 2];
+			(*verts)[u * 8 + 5] = (*vertNorms)[normValueIndex];
+			(*verts)[u * 8 + 6] = (*vertNorms)[normValueIndex + 1];
+			(*verts)[u * 8 + 7] = (*vertNorms)[normValueIndex + 2];
 			++u;
 		}
 		else

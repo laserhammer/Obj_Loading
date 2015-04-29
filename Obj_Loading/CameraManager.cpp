@@ -48,13 +48,13 @@ void CameraManager::Update(float dt)
 	_cameraData.viewProjMat = viewProjMat;
 	_cameraData.camPos = _camPos;
 
-	GLsizei vec4size = sizeof(GLfloat) * 4;
+	GLsizei vec4size = sizeof(GLfloat) * 4;/*
 	memcpy(ResourceManager::cameraBuffer, glm::value_ptr(_cameraData.viewProjMat[0]), vec4size);
 	memcpy(ResourceManager::cameraBuffer + vec4size, glm::value_ptr(_cameraData.viewProjMat[1]), vec4size);
 	memcpy(ResourceManager::cameraBuffer + vec4size * 2, glm::value_ptr(_cameraData.viewProjMat[2]), vec4size);
 	memcpy(ResourceManager::cameraBuffer + vec4size * 3, glm::value_ptr(_cameraData.viewProjMat[3]), vec4size);
 
-	memcpy(ResourceManager::cameraBuffer + vec4size * 4, glm::value_ptr(_cameraData.camPos), vec4size);
+	memcpy(ResourceManager::cameraBuffer + vec4size * 4, glm::value_ptr(_cameraData.camPos), vec4size);*/
 
 	glBindBuffer(GL_UNIFORM_BUFFER, _cameraBufferLocation);
 	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::cameraBufferSize, &ResourceManager::cameraBuffer, GL_DYNAMIC_DRAW);

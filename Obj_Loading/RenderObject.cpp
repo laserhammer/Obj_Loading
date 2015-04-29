@@ -1,6 +1,8 @@
 #include "RenderObject.h"
 #include "ResourceManager.h"
 #include <GLM\gtc\type_ptr.hpp>
+#include <iostream>
+#include "CameraManager.h"
 
 RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer)
 {
@@ -20,10 +22,7 @@ RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer
 
 	_perModelBlock = PerModelBlock();
 
-	_perModelBlock.color[0] = 1.0f;
-	_perModelBlock.color[1] = 1.0f; 
-	_perModelBlock.color[2] = 1.0f;
-	_perModelBlock.color[3] = 1.0f;
+	_perModelBlock.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glGenBuffers(1, &_perModelBufferLocation);
 	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBufferLocation);
@@ -78,10 +77,10 @@ void RenderObject::Update(float dt)
 void RenderObject::Draw()
 {
 	glBindVertexArray(_mesh->vao);
-
+	
 	// Update the model Buffer
 	GLsizei vec4Size = sizeof(GLfloat) * 4;
-	memcpy(ResourceManager::perModelBuffer, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
+/*	memcpy(ResourceManager::perModelBuffer, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size, glm::value_ptr(_perModelBlock.modelMat[1]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
@@ -92,20 +91,25 @@ void RenderObject::Draw()
 	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
 
-	memcpy(ResourceManager::perModelBuffer + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);
+	memcpy(ResourceManager::perModelBuffer + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);*/
 
 	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBufferLocation);
 	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::perModelBufferSize, ResourceManager::perModelBuffer, GL_DYNAMIC_DRAW);
-
-	glUseProgram(_shader->program);
-
+	
+	//glUseProgram(_shader->program);
+	glUseProgram(_shader->shaderPointer);
+	glUniformMatrix4fv(_shader->uModelMat, 1, GL_FALSE, glm::value_ptr(_perModelBlock.modelMat));
+	glUniformMatrix4fv(_shader->uViewMat, 1, GL_FALSE, glm::value_ptr(CameraManager::ViewMat()));
+	glUniformMatrix4fv(_shader->uProjMat, 1, GL_FALSE, glm::value_ptr(CameraManager::ProjMat()));
+	glUniform4fv(_shader->uColor, 1, glm::value_ptr(_perModelBlock.color));
+	glUniform4fv(_shader->uCamPos, 1, glm::value_ptr(CameraManager::CamPos()));
+	
 	glDrawElements(_mode, _mesh->count, GL_UNSIGNED_INT, 0);
 }
 
 Transform& RenderObject::transform() { return _transform; }
 void RenderObject::setColor(glm::vec4 color)
 { 
-	//memcpy(_perModelBlock.color, glm::value_ptr(color), sizeof(GLfloat) * 4);
 	_perModelBlock.color = color;
 }
 
