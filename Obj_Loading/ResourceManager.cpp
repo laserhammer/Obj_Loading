@@ -1,5 +1,6 @@
 #include "ResourceManager.h"
 #include "LightingManager.h"
+#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -20,7 +21,7 @@ GLint ResourceManager::perModelBufferSize;
 GLint ResourceManager::cameraBufferSize;
 GLint ResourceManager::lightsBufferSize;
 
-GLfloat vertices[] = {
+GLfloat cubeVerts[] = {
 	-1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 	+1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 	-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
@@ -31,7 +32,7 @@ GLfloat vertices[] = {
 	+1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 1.0f
 };
 
-GLuint elements[] = {
+GLint cubeElements[] = {
 	// Front
 	0, 1, 2,
 	1, 3, 2,
@@ -60,17 +61,16 @@ GLuint elements[] = {
 
 void ResourceManager::Init()
 {
-	char* sphereObj = ReadTextFile("../Resources/meshes/Sphere.obj");
 	std::vector<GLfloat> vertPos = std::vector<GLfloat>();
 	std::vector<GLfloat> vertNorms = std::vector<GLfloat>();
 	std::vector<GLint> elements = std::vector<GLint>();
-	ParseOBJ(sphereObj, &vertPos, &vertNorms, &elements);
+	ParseOBJ(ReadTextFile("../Resources/meshes/Sphere.obj"), &vertPos, &vertNorms, &elements);
 
 	std::vector<GLfloat> verts = std::vector<GLfloat>();
 	std::vector<GLint> vertElements = std::vector<GLint>();
 	GenVertices(&verts, &vertElements, &vertPos, &vertNorms, &elements);
 
-	GenMesh(&verts, &elements, sphere);
+	GenMesh(&verts[0], verts.size(), &vertElements[0], vertElements.size(), sphere);
 
 	GLuint shaders[2];
 	
@@ -246,7 +246,6 @@ float StringToFloat(const char* string)
 	float decimalFactor = 1.0f;
 	float retFloat = 0.0f;
 	int stringItr = 0;
-	float digit = 1.0f;
 	while (string[stringItr])
 	{
 		if (string[stringItr] == '-')
@@ -267,8 +266,7 @@ float StringToFloat(const char* string)
 			}
 			else
 			{
-				retFloat = retFloat * digit + value;
-				digit *= 10.0f;
+				retFloat = retFloat * 10.0f + value;
 			}
 		}
 		++stringItr;
@@ -278,36 +276,102 @@ float StringToFloat(const char* string)
 	return retFloat;
 }
 
-unsigned int StringToUnsiginedInt(const char* string)
+int StringToInt(const char* string)
 {
-	unsigned int retInt = 0;
+	int retInt = 0;
 	int stringItr = 0;
-	int digit = 1;
 	int value;
 	while (string[stringItr])
 	{
 		value = string[stringItr] - 48;
-		retInt = retInt * digit + value;
-		digit *= 10;
+		retInt = retInt * 10 + value;
 		++stringItr;
 	}
 	return retInt;
 }
 
+void ParseFace(std::vector<GLint>* elements, std::vector<char*>& terms)
+{
+	unsigned int term, termItr, currentComponent, size;
+	char *componentStrings[3];
+	GLint componentInts[3], *pivot, *prevVert;
+	std::vector<GLint*> currentElements = std::vector<GLint*>();
+	currentElements.reserve(4);
+
+	// Face, store in elements
+	// Parse each of the terms in the terms array by '\' and store the resulting value in elements
+	componentStrings[0] = nullptr;	// Positions
+	componentStrings[1] = nullptr;	// Tex Coordinates
+	componentStrings[2] = nullptr;	// Normals
+	size = terms.size();
+	for (term = 1; term < size; ++term)
+	{
+		// A single face contains one or more triangles, 3 elements need to be added for each triangle
+		currentComponent = 0;
+		termItr = 0;
+		componentStrings[0] = &terms[term][0];
+		for (termItr = 0; terms[term][termItr]; ++termItr)
+		{
+			if (terms[term][termItr] == '/')
+			{
+				terms[term][termItr] = '\0';
+				componentStrings[++currentComponent] = &terms[term][termItr + 1];
+			}
+		}
+		componentInts[0] = StringToInt(componentStrings[0]);
+		componentInts[1] = StringToInt(componentStrings[1]);
+		componentInts[2] = StringToInt(componentStrings[2]);
+		currentElements.push_back(new GLint[3]);
+		memcpy(currentElements[term - 1], componentInts, sizeof(GLint) * 3);
+	}
+ 	size = currentElements.size();
+	pivot = nullptr;
+	prevVert = nullptr;
+	//elementC = nullptr;
+	// Add all of the elemnts in currentElements as triangle adjacencies
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		if (!pivot)
+		{
+			pivot = currentElements[i];
+		}
+		else if (!prevVert)
+		{
+			prevVert = currentElements[i];
+		}
+		else
+		{
+			//A
+			elements->push_back(pivot[0]);
+			elements->push_back(pivot[1]);
+			elements->push_back(pivot[2]);
+			//B
+			elements->push_back(prevVert[0]);
+			elements->push_back(prevVert[1]);
+			elements->push_back(prevVert[2]);
+			//C
+			elements->push_back(currentElements[i][0]);
+			elements->push_back(currentElements[i][1]);
+			elements->push_back(currentElements[i][2]);
+			prevVert = currentElements[i];
+		}
+	}
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		delete[] currentElements[i];
+	}
+}
+
 void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorm, std::vector<GLint>* elements)
 {
-	vertPos->reserve(300);
-	vertNorm->reserve(300);
-	elements->reserve(300);
-	int maxNumTerms = 5;
-	int term, termItr, lineItr, elementItr;
-	char currentChar, line[255], elementString[32];
+	vertPos->reserve(1024);
+	vertNorm->reserve(1024);
+	elements->reserve(2048);
+	unsigned int lineItr;
+	char currentChar, line[256];
 	std::vector<char*> terms = std::vector<char*>();
-	terms.resize(maxNumTerms);
-	for (int i = 0; i < maxNumTerms; ++i)
-	{
-		terms[i] = new char[32];
-	}
+	terms.reserve(5);
 	for (int i = 0; obj[i]; ++i)
 	{
 		currentChar = obj[i];
@@ -334,25 +398,17 @@ void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::ve
 			}
 
 			// Parse the line by ' ' and put each value into its own string
-		
-			term = 0;
-			termItr = 0;
 			lineItr = 0;
+			terms.push_back(line);
 			while (line[lineItr])
 			{
-				if (line[lineItr] != ' ')
+				if (line[lineItr] == ' ')
 				{
-					terms[term][termItr++] = line[lineItr];
-				}
-				else
-				{
-					terms[term][termItr] = '\0';
-					term++;
-					termItr = 0;
+					line[lineItr] = '\0';
+					terms.push_back(&line[lineItr + 1]);
 				}
 				lineItr++;
 			}
-			terms[term][termItr] = '\0';
 
 			// The first term will determine what type of data follows
 			if (terms[0][0] == 'v'&& !terms[0][1])
@@ -373,40 +429,17 @@ void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::ve
 
 			if (terms[0][0] == 'f')
 			{
-				// Face, store in elements
-				// Parse each of the terms in the terms array by '\' and store the resulting value in elements
-				elementItr = 0;
-				for (term = 1; term < 5; ++term)
-				{
-					for (termItr = 0; terms[term][termItr]; ++termItr)
-					{
-						if (terms[term][termItr] == '/' )
-						{
-							elementString[elementItr] = '\0';
-							elements->push_back(StringToUnsiginedInt(elementString));
-							elementItr = 0;
-						}
-						else
-						{
-							elementString[elementItr] = terms[term][termItr];
-							++elementItr;
-						}
-					}
-					// Add last element
-					elementString[elementItr] = '\0';
-					elements->push_back(StringToUnsiginedInt(elementString));
-					elementItr = 0;
-				}
+				ParseFace(elements, terms);
 			}
+
+			terms.clear();
 		}
 	}
-	for (int i = 0; i < maxNumTerms; ++i)
-	{
-		delete[] terms[i];
-	}
+
+	delete[] obj;
 }
 
-void ResourceManager::GenMesh(std::vector<GLfloat>* verts, std::vector<GLint>* elements, Mesh& mesh)
+void ResourceManager::GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh)
 {
 	mesh = Mesh();
 	
@@ -415,24 +448,30 @@ void ResourceManager::GenMesh(std::vector<GLfloat>* verts, std::vector<GLint>* e
 
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(*verts), verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertsLength, verts, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(*elements), elements, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * count, elements, GL_STATIC_DRAW);
 
-	mesh.count = elements->size();
+	mesh.count = count;
 }
 
 void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements)
 {
 	unsigned int numElements = elements->size() / 3;
 	vertElements->resize(numElements);
+	// Initialize to -1
+	for (unsigned int i = 0; i < numElements; ++i)
+	{
+		(*vertElements)[i] = -1;
+	}
+
 	unsigned int uniqueElementCount = 0;
 	bool commonVert, commonUV, commonNorm;
 	for (unsigned int i = 0; i < numElements; ++i)
 	{
-		if ((*vertElements)[i] == 0)
+		if ((*vertElements)[i] == -1)
 		{
 			(*vertElements)[i] = uniqueElementCount++;
 		}
@@ -456,9 +495,9 @@ void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint
 	{
 		if ((*vertElements)[i] == u)
 		{
-			vertElement = (*vertElements)[i];
-			posValueIndex = ((*elements)[vertElement * 3] - 1) * 3;
-			normValueIndex = ((*elements)[vertElement * 3 + 2] - 1) * 3;
+			//vertElement = (*vertElements)[i];
+			posValueIndex = ((*elements)[i * 3] - 1) * 3;
+			normValueIndex = ((*elements)[i * 3 + 2] - 1) * 3;
 			
 			(*verts)[u * 8] = (*vertPos)[posValueIndex];
 			(*verts)[u * 8 + 1] = (*vertPos)[posValueIndex + 1];
@@ -472,8 +511,6 @@ void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint
 			(*verts)[u * 8 + 7] = (*vertNorms)[normValueIndex + 2];
 			++u;
 		}
-		else
-			continue;
 	}
 }
 

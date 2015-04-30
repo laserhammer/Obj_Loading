@@ -67,7 +67,7 @@ private:
 	static GLuint CompileShader(char* shader, GLenum type);
 	static GLuint LinkShaderProgram(GLuint* shaders, int numShaders, GLuint fragDataBindColorNumber, char* fragDataBindName);
 	static void ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorm, std::vector<GLint>* elements);
-	static void GenMesh(std::vector<GLfloat>* verts, std::vector<GLint>* elements, Mesh& mesh);
+	static void GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh);
 	static void GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements);
 	static void ReleaseMesh(Mesh& mesh);
 };

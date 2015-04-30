@@ -16,6 +16,7 @@
 GLFWwindow* window;
 
 RenderObject* sphere;
+RenderObject* sphere2;
 
 Light* light;
 
@@ -23,8 +24,9 @@ void InitLights()
 {
 	light = LightingManager::GetLight(0);
 	light->position.y = 3.0f;
-	light->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	light->power = 5.0f;
+	light->color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	light->ambient = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	light->power = 0.2f;
 }
 
 void init()
@@ -51,6 +53,7 @@ void init()
 
 	ResourceManager::Init();
 	RenderManager::Init(1);
+	LightingManager::Init();
 
 	glfwSetTime(0.0);
 
@@ -61,11 +64,15 @@ void init()
 	InitLights();
 
 	sphere = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere2 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere2->transform().position.y = 3.0f;
 
 	//generateTeapot();
 
 	InputManager::Init(window);
-	CameraManager::Init(800.0f / 600.0f, 60.0f, 0.1f, 100.0f);
+	CameraManager::Init(800.0f / 600.0f, 80.0f, 0.1f, 100.0f);
+
+	glEnable(GL_CULL_FACE);
 }
 
 void step()

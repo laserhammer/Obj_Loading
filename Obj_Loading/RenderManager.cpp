@@ -39,6 +39,7 @@ void RenderManager::Update(float dt)
 
 void RenderManager::Draw(GLuint mask)
 {
+	glEnable(GL_DEPTH_TEST);
 	for (unsigned int i = 0; i < _numInitializedRenderObjects; ++i)
 	{
 		if (mask & _displayList[i].layer())
