@@ -3,52 +3,52 @@
 #include "RenderObject.h"
 #include "CameraManager.h"
 
-RenderObject* RenderManager::_displayList;
+std::vector<RenderObject*> RenderManager::_displayList;
 unsigned int RenderManager::_displayListLength;
 unsigned int RenderManager::_numInitializedRenderObjects;
 
 void RenderManager::Init(unsigned int numRenderObjects)
 {
 	_displayListLength = numRenderObjects;
-	_displayList = new RenderObject[_displayListLength];
+	_displayList = std::vector<RenderObject*>();
+	_displayList.reserve(numRenderObjects);
 	_numInitializedRenderObjects = 0;
 }
 
 RenderObject* RenderManager::InitRenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer)
 {
-	if (_numInitializedRenderObjects + 1 > _displayListLength)
-	{
-		RenderObject* temp = _displayList;
-		_displayList = new RenderObject[_displayListLength + 1];
-		memcpy(_displayList, temp, sizeof(RenderObject) * _displayListLength);
-		delete[] temp;
-		++_displayListLength;
-	}
-
-	RenderObject* retObj = &(_displayList[_numInitializedRenderObjects++] = RenderObject(mesh, shader, mode, layer));
+	RenderObject* retObj = new RenderObject(mesh, shader, mode, layer);
+	_displayList.push_back(retObj);
 	return retObj;
 }
 
 void RenderManager::Update(float dt)
 {
-	for (unsigned int i = 0; i < _numInitializedRenderObjects; ++i)
+	unsigned int size = _displayList.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
-		_displayList[i].Update(dt);
+		_displayList[i]->Update(dt);
 	}
 }
 
 void RenderManager::Draw(GLuint mask)
 {
 	glEnable(GL_DEPTH_TEST);
-	for (unsigned int i = 0; i < _numInitializedRenderObjects; ++i)
+	glEnable(GL_CULL_FACE);
+	unsigned int size = _displayList.size();
+	for (unsigned int i = 0; i < size; ++i)
 	{
-		if (mask & _displayList[i].layer())
-			_displayList[i].Draw();
+		if (mask & _displayList[i]->layer())
+			_displayList[i]->Draw();
 	}
 }
 void RenderManager::DumpData()
 {
-	delete[] _displayList;
+	unsigned int size = _displayList.size();
+	for (int i = 0; i < size; ++i)
+	{
+		delete _displayList[i];
+	}
 }
 
 	

@@ -15,8 +15,10 @@
 
 GLFWwindow* window;
 
-RenderObject* sphere;
-RenderObject* sphere2;
+RenderObject* sphere0;
+RenderObject* sphere1;
+RenderObject* plane;
+RenderObject* cube;
 
 Light* light;
 
@@ -26,7 +28,7 @@ void InitLights()
 	light->position.y = 3.0f;
 	light->color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	light->ambient = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	light->power = 0.2f;
+	light->power = 1.5f;
 }
 
 void init()
@@ -54,6 +56,8 @@ void init()
 	ResourceManager::Init();
 	RenderManager::Init(1);
 	LightingManager::Init();
+	InputManager::Init(window);
+	CameraManager::Init(800.0f / 600.0f, 80.0f, 0.1f, 100.0f);
 
 	glfwSetTime(0.0);
 
@@ -63,16 +67,19 @@ void init()
 
 	InitLights();
 
-	sphere = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	sphere2 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	sphere2->transform().position.y = 3.0f;
+	sphere0 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere0->transform().position = glm::vec3(3.0f, 0.5f, 1.5f);
 
-	//generateTeapot();
+	sphere1 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere1->transform().position = glm::vec3(-2.0f, 0.5f, -3.5f);
 
-	InputManager::Init(window);
-	CameraManager::Init(800.0f / 600.0f, 80.0f, 0.1f, 100.0f);
+	plane = RenderManager::InitRenderObject(&ResourceManager::plane, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	plane->transform().scale = glm::vec3(100.0f, 1.0f, 100.0f);
+	plane->transform().position = glm::vec3(0.0f, -2.0f, 0.0f);
 
-	glEnable(GL_CULL_FACE);
+	//cube = RenderManager::InitRenderObject(&ResourceManager::cube, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	//cube->transform().position = glm::vec3(1.0f, 2.5f, -2.5f);
+	//cube->transform().scale = glm::vec3(1.0f, 5.0f, 1.0f);
 }
 
 void step()
@@ -87,18 +94,11 @@ void step()
 	float dt = (float)glfwGetTime();
 	glfwSetTime(0.0);
 
-	//float dTheta = 45.0f * InputManager::rightKey();
-	//dTheta -= 45.0f * InputManager::leftKey();
-
-	//teapot->transform().angularVelocity = glm::angleAxis(dTheta, glm::vec3(0.0f, 1.0f, 0.0f));
-
 	CameraManager::Update(dt);
 
 	RenderManager::Update(dt);
 
 	LightingManager::Update(dt);
-
-	//teapot->Update(dt);
 
 	RenderManager::Draw(1);
 
@@ -108,15 +108,7 @@ void step()
 
 void cleanUp()
 {
-	//glDeleteProgram(phongShader.shaderPointer);
-	//glDeleteProgram(selfIllumShader.shaderPointer);
-	//glDeleteBuffers(1, &cubeVBO);
-	//glDeleteBuffers(1, &cubeEBO);
-	//glDeleteVertexArrays(1, &cubeVAO);
-
 	RenderManager::DumpData();
-
-	//delete teapot;
 	ResourceManager::DumpData();
 	CameraManager::DumpData();
 	LightingManager::DumpData();

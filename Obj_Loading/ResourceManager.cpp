@@ -5,7 +5,6 @@
 #include <iostream>
 
 Shader ResourceManager::phongShader;
-Mesh ResourceManager::sphere;
 GLuint ResourceManager::phongVertShader;
 GLuint ResourceManager::phongFragShader;
 
@@ -21,6 +20,10 @@ GLint ResourceManager::perModelBufferSize;
 GLint ResourceManager::cameraBufferSize;
 GLint ResourceManager::lightsBufferSize;
 
+Mesh ResourceManager::sphere;
+Mesh ResourceManager::cube;
+Mesh ResourceManager::plane;
+/*
 GLfloat cubeVerts[] = {
 	-1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 	+1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
@@ -56,21 +59,14 @@ GLint cubeElements[] = {
 	// Left
 	6, 4, 0,
 	0, 2, 6,
-};
+};*/
 
 
 void ResourceManager::Init()
 {
-	std::vector<GLfloat> vertPos = std::vector<GLfloat>();
-	std::vector<GLfloat> vertNorms = std::vector<GLfloat>();
-	std::vector<GLint> elements = std::vector<GLint>();
-	ParseOBJ(ReadTextFile("../Resources/meshes/Sphere.obj"), &vertPos, &vertNorms, &elements);
-
-	std::vector<GLfloat> verts = std::vector<GLfloat>();
-	std::vector<GLint> vertElements = std::vector<GLint>();
-	GenVertices(&verts, &vertElements, &vertPos, &vertNorms, &elements);
-
-	GenMesh(&verts[0], verts.size(), &vertElements[0], vertElements.size(), sphere);
+	LoadOBJ("../Resources/meshes/Sphere.obj", sphere);
+	//LoadOBJ("../Resources/meshes/Cube.obj", cube);
+	LoadOBJ("../Resources/meshes/Plane.obj", plane);
 
 	GLuint shaders[2];
 	
@@ -239,6 +235,20 @@ GLuint ResourceManager::LinkShaderProgram(GLuint* shaders, int numShaders, GLuin
 	return program;
 }
 
+void ResourceManager::LoadOBJ(char* obj, Mesh& mesh)
+{
+	std::vector<GLfloat> vertPos = std::vector<GLfloat>();
+	std::vector<GLfloat> vertNorms = std::vector<GLfloat>();
+	std::vector<GLint> elements = std::vector<GLint>();
+	ParseOBJ(ReadTextFile(obj), &vertPos, &vertNorms, &elements);
+
+	std::vector<GLfloat> verts = std::vector<GLfloat>();
+	std::vector<GLint> vertElements = std::vector<GLint>();
+	GenVertices(&verts, &vertElements, &vertPos, &vertNorms, &elements);
+
+	GenMesh(&verts[0], verts.size(), &vertElements[0], vertElements.size(), mesh);
+}
+
 float StringToFloat(const char* string)
 {
 	bool decimalPointHit = false;
@@ -327,7 +337,6 @@ void ParseFace(std::vector<GLint>* elements, std::vector<char*>& terms)
  	size = currentElements.size();
 	pivot = nullptr;
 	prevVert = nullptr;
-	//elementC = nullptr;
 	// Add all of the elemnts in currentElements as triangle adjacencies
 	for (unsigned int i = 0; i < size; ++i)
 	{
@@ -422,9 +431,9 @@ void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::ve
 			if (terms[0][0] == 'v' && terms[0][1] == 'n')
 			{
 				// Normal, store in vertNorm
-				vertNorm->push_back(StringToFloat(terms[1]));
-				vertNorm->push_back(StringToFloat(terms[2]));
-				vertNorm->push_back(StringToFloat(terms[3]));
+				vertNorm->push_back(-StringToFloat(terms[1]));
+				vertNorm->push_back(-StringToFloat(terms[2]));
+				vertNorm->push_back(-StringToFloat(terms[3]));
 			}
 
 			if (terms[0][0] == 'f')
@@ -442,19 +451,25 @@ void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::ve
 void ResourceManager::GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh)
 {
 	mesh = Mesh();
+
+	mesh.vertexBuffer = new GLfloat[vertsLength];
+	memcpy(mesh.vertexBuffer, verts, sizeof(GLfloat) * vertsLength);
+	mesh.vertexBufferCount = vertsLength;
+
+	mesh.elementBuffer = new GLint[count];
+	memcpy(mesh.elementBuffer, elements, sizeof(GLfloat) * count);
+	mesh.count = count;
 	
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertsLength, verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertsLength, mesh.vertexBuffer, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * count, elements, GL_STATIC_DRAW);
-
-	mesh.count = count;
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * count, mesh.elementBuffer, GL_STATIC_DRAW);
 }
 
 void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements)
@@ -518,5 +533,7 @@ void ResourceManager::ReleaseMesh(Mesh& mesh)
 {
 	glDeleteVertexArrays(1, &mesh.vao);
 	glDeleteBuffers(1, &mesh.vbo);
+	delete[] mesh.vertexBuffer;
 	glDeleteBuffers(1, &mesh.ebo);
+	delete[] mesh.elementBuffer;
 }

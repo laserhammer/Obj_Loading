@@ -1,5 +1,6 @@
 #pragma once
 #include <GLEW\GL\glew.h>
+#include <vector>
 
 class RenderObject;
 struct Mesh;
@@ -15,7 +16,7 @@ public:
 	static void Draw(GLuint mask);
 	static void DumpData();
 private:
-	static RenderObject* _displayList;
+	static std::vector<RenderObject*> _displayList;
 	static unsigned int _displayListLength;
 	static unsigned int _numInitializedRenderObjects;
 };
