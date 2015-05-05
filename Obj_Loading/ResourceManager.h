@@ -14,23 +14,14 @@ struct Vertex
 	float normY;
 	float normZ;
 };
-/*
-struct Shader
-{
-	GLint program;
-	GLint uCameraBlockIndex;
-	GLint uPerModelBlockIndex;
-	GLint uLightsBlockIndex;
-};*/
 
 struct Shader
 {
 	GLint shaderPointer;
-	GLint uModelMat;
-	GLint uViewMat;
-	GLint uProjMat;
-	GLint uColor;
-	GLint uCamPos;
+
+	GLint uPerModelBlockIndex;
+	GLint uCameraBlockIndex;
+	GLint uLightsBlockIndex;
 };
 
 struct Mesh
@@ -38,7 +29,7 @@ struct Mesh
 	GLuint vao;
 	GLuint vbo;
 	GLfloat* vertexBuffer;
-	GLint vertexBufferCount;
+	GLint vertexBufferSize;
 	GLuint ebo;
 	GLint* elementBuffer;
 	GLint count;
@@ -71,9 +62,9 @@ private:
 	static char* ReadTextFile(const char* filepath);
 	static GLuint CompileShader(char* shader, GLenum type);
 	static GLuint LinkShaderProgram(GLuint* shaders, int numShaders, GLuint fragDataBindColorNumber, char* fragDataBindName);
-	static void LoadOBJ(char* obj, Mesh& mesh);
+	static void LoadOBJ(char* obj, Mesh& mesh, Shader* shader);
 	static void ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorm, std::vector<GLint>* elements);
-	static void GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh);
+	static void GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh, Shader* shader);
 	static void GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements);
 	static void ReleaseMesh(Mesh& mesh);
 };

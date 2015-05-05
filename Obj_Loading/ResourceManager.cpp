@@ -1,6 +1,5 @@
 #include "ResourceManager.h"
 #include "LightingManager.h"
-#include <array>
 #include <fstream>
 #include <iostream>
 
@@ -23,51 +22,10 @@ GLint ResourceManager::lightsBufferSize;
 Mesh ResourceManager::sphere;
 Mesh ResourceManager::cube;
 Mesh ResourceManager::plane;
-/*
-GLfloat cubeVerts[] = {
-	-1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
-	-1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 1.0f,
-	+1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 1.0f
-};
-
-GLint cubeElements[] = {
-	// Front
-	0, 1, 2,
-	1, 3, 2,
-
-	// Back
-	6, 5, 4,
-	6, 7, 5,
-
-	// Top
-	4, 5, 0,
-	1, 0, 5,
-
-	// Bottom
-	7, 2, 3,
-	7, 6, 2,
-
-	// Right
-	1, 5, 7,
-	7, 3, 1,
-
-	// Left
-	6, 4, 0,
-	0, 2, 6,
-};*/
 
 
 void ResourceManager::Init()
 {
-	LoadOBJ("../Resources/meshes/Sphere.obj", sphere);
-	//LoadOBJ("../Resources/meshes/Cube.obj", cube);
-	LoadOBJ("../Resources/meshes/Plane.obj", plane);
-
 	GLuint shaders[2];
 	
 	phongFragShader = CompileShader("fshader.glsl", GL_FRAGMENT_SHADER);
@@ -78,59 +36,34 @@ void ResourceManager::Init()
 
 	phongShader = Shader();
 	phongShader.shaderPointer = LinkShaderProgram(shaders, 2, 0, "outColor");;
-	phongShader.uModelMat = glGetUniformLocation(phongShader.shaderPointer, "modelMat");
-	phongShader.uViewMat = glGetUniformLocation(phongShader.shaderPointer, "viewMat");
-	phongShader.uProjMat = glGetUniformLocation(phongShader.shaderPointer, "projMat");
-	phongShader.uColor = glGetUniformLocation(phongShader.shaderPointer, "color");
-	phongShader.uCamPos = glGetUniformLocation(phongShader.shaderPointer, "camPos");
 
-	GLint posAttrib = glGetAttribLocation(phongShader.shaderPointer, "position");
-	glEnableVertexAttribArray(posAttrib);
-	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
-
-	GLint normAttrib = glGetAttribLocation(phongShader.shaderPointer, "normal");
-	glEnableVertexAttribArray(normAttrib);
-	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
-	/*
-	phongShader.program = LinkShaderProgram(shaders, 2, 0, "outColor");
-
-
-	phongShader.uPerModelBlockIndex = glGetUniformBlockIndex(phongShader.program, "perModel");
-	glUniformBlockBinding(phongShader.program, phongShader.uPerModelBlockIndex, PERMODEL_BIND_POINT);
-	glGetActiveUniformBlockiv(phongShader.program, phongShader.uPerModelBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &perModelBufferSize);
+	phongShader.uPerModelBlockIndex = glGetUniformBlockIndex(phongShader.shaderPointer, "perModel");
+	glUniformBlockBinding(phongShader.shaderPointer, phongShader.uPerModelBlockIndex, PERMODEL_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.shaderPointer, phongShader.uPerModelBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &perModelBufferSize);
 	perModelBuffer = new GLubyte[perModelBufferSize];
-
-	phongShader.uCameraBlockIndex = glGetUniformBlockIndex(phongShader.program, "camera");
-	glUniformBlockBinding(phongShader.program, phongShader.uCameraBlockIndex, CAMERA_BIND_POINT);
-	glGetActiveUniformBlockiv(phongShader.program, phongShader.uCameraBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &cameraBufferSize);
+	
+	phongShader.uCameraBlockIndex = glGetUniformBlockIndex(phongShader.shaderPointer, "camera");
+	glUniformBlockBinding(phongShader.shaderPointer, phongShader.uCameraBlockIndex, CAMERA_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.shaderPointer, phongShader.uCameraBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &cameraBufferSize);
 	cameraBuffer = new GLubyte[cameraBufferSize];
-
-	phongShader.uLightsBlockIndex = glGetUniformBlockIndex(phongShader.program, "lightsBlock");
-	glUniformBlockBinding(phongShader.program, phongShader.uLightsBlockIndex, LIGHTS_BIND_POINT);
-	glGetActiveUniformBlockiv(phongShader.program, phongShader.uLightsBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &lightsBufferSize);
+	
+	phongShader.uLightsBlockIndex = glGetUniformBlockIndex(phongShader.shaderPointer, "lightsBlock");
+	glUniformBlockBinding(phongShader.shaderPointer, phongShader.uLightsBlockIndex, LIGHTS_BIND_POINT);
+	glGetActiveUniformBlockiv(phongShader.shaderPointer, phongShader.uLightsBlockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &lightsBufferSize);
 	lightsBuffer = new GLubyte[lightsBufferSize];
 
-
-	GLint posAttrib = glGetAttribLocation(phongShader.program, "position");
-	glEnableVertexAttribArray(posAttrib);
-	glVertexAttribPointer(posAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, 0);
-
-	GLint texAttrib = glGetAttribLocation(phongShader.program, "texCoord");
-	glEnableVertexAttribArray(texAttrib);
-	glVertexAttribPointer(texAttrib, sizeof(GLfloat) * 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 3));
-
-	GLint normAttrib = glGetAttribLocation(phongShader.program, "normal");
-	glEnableVertexAttribArray(normAttrib);
-	glVertexAttribPointer(normAttrib, sizeof(GLfloat) * 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (void*)(sizeof(GLfloat) * 5));*/
-
+	LoadOBJ("../Resources/meshes/Sphere.obj", sphere, &phongShader);
+	LoadOBJ("../Resources/meshes/Cube.obj", cube, &phongShader);
+	LoadOBJ("../Resources/meshes/Plane.obj", plane, &phongShader);
 }
 
 void ResourceManager::DumpData()
 {
 	ReleaseMesh(sphere);
+	ReleaseMesh(cube);
+	ReleaseMesh(plane);
 	glDeleteShader(phongFragShader);
 	glDeleteShader(phongVertShader);
-	//glDeleteProgram(phongShader.program);
 	glDeleteProgram(phongShader.shaderPointer);
 
 	delete[] cameraBuffer;
@@ -235,7 +168,7 @@ GLuint ResourceManager::LinkShaderProgram(GLuint* shaders, int numShaders, GLuin
 	return program;
 }
 
-void ResourceManager::LoadOBJ(char* obj, Mesh& mesh)
+void ResourceManager::LoadOBJ(char* obj, Mesh& mesh, Shader* shader)
 {
 	std::vector<GLfloat> vertPos = std::vector<GLfloat>();
 	std::vector<GLfloat> vertNorms = std::vector<GLfloat>();
@@ -246,7 +179,7 @@ void ResourceManager::LoadOBJ(char* obj, Mesh& mesh)
 	std::vector<GLint> vertElements = std::vector<GLint>();
 	GenVertices(&verts, &vertElements, &vertPos, &vertNorms, &elements);
 
-	GenMesh(&verts[0], verts.size(), &vertElements[0], vertElements.size(), mesh);
+	GenMesh(&verts[0], verts.size(), &vertElements[0], vertElements.size(), mesh, shader);
 }
 
 float StringToFloat(const char* string)
@@ -448,13 +381,13 @@ void ResourceManager::ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::ve
 	delete[] obj;
 }
 
-void ResourceManager::GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh)
+void ResourceManager::GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh, Shader* shader)
 {
 	mesh = Mesh();
 
 	mesh.vertexBuffer = new GLfloat[vertsLength];
 	memcpy(mesh.vertexBuffer, verts, sizeof(GLfloat) * vertsLength);
-	mesh.vertexBufferCount = vertsLength;
+	mesh.vertexBufferSize = vertsLength;
 
 	mesh.elementBuffer = new GLint[count];
 	memcpy(mesh.elementBuffer, elements, sizeof(GLfloat) * count);
@@ -470,6 +403,18 @@ void ResourceManager::GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * count, mesh.elementBuffer, GL_STATIC_DRAW);
+
+	GLint posAttrib = glGetAttribLocation(phongShader.shaderPointer, "position");
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+
+	GLint texAttrib = glGetAttribLocation(phongShader.shaderPointer, "texCoord");
+	glEnableVertexAttribArray(texAttrib);
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+
+	GLint normAttrib = glGetAttribLocation(phongShader.shaderPointer, "normal");
+	glEnableVertexAttribArray(normAttrib);
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
 }
 
 void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements)
@@ -504,13 +449,12 @@ void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint
 	}
 
 	verts->resize(uniqueElementCount * 8);
-	unsigned int vertElement, u, posValueIndex, normValueIndex;
+	unsigned int u, posValueIndex, normValueIndex;
 	u = 0;
 	for (unsigned int i = 0; i < numElements; ++i)
 	{
 		if ((*vertElements)[i] == u)
 		{
-			//vertElement = (*vertElements)[i];
 			posValueIndex = ((*elements)[i * 3] - 1) * 3;
 			normValueIndex = ((*elements)[i * 3 + 2] - 1) * 3;
 			
@@ -531,9 +475,12 @@ void ResourceManager::GenVertices(std::vector<GLfloat>* verts, std::vector<GLint
 
 void ResourceManager::ReleaseMesh(Mesh& mesh)
 {
-	glDeleteVertexArrays(1, &mesh.vao);
-	glDeleteBuffers(1, &mesh.vbo);
-	delete[] mesh.vertexBuffer;
-	glDeleteBuffers(1, &mesh.ebo);
-	delete[] mesh.elementBuffer;
+	if (&mesh)
+	{
+		glDeleteVertexArrays(1, &mesh.vao);
+		glDeleteBuffers(1, &mesh.vbo);
+		delete[] mesh.vertexBuffer;
+		glDeleteBuffers(1, &mesh.ebo);
+		delete[] mesh.elementBuffer;
+	}
 }

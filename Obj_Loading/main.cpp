@@ -20,15 +20,38 @@ RenderObject* sphere1;
 RenderObject* plane;
 RenderObject* cube;
 
-Light* light;
+Light* light0;
+Light* light1;
 
-void InitLights()
+void InitScene()
 {
-	light = LightingManager::GetLight(0);
-	light->position.y = 3.0f;
-	light->color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	light->ambient = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	light->power = 1.5f;
+	light0 = LightingManager::GetLight(0);
+	light0->position.y = 5.0f;
+	light0->color = glm::vec4(0.6f, 1.0f, 0.0f, 1.0f);
+	light0->ambient = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	light0->power = 5.0f;
+
+	light1 = LightingManager::GetLight(1);
+	light1->position = glm::vec3(10.0f, 10.0f, 25.0f);
+	light1->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	light1->ambient = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	light1->power = 15.0f;
+
+	sphere0 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere0->transform().position = glm::vec3(3.0f, 0.5f, 1.5f);
+	sphere0->transform().scale = glm::vec3(3.0f, 1.0f, 1.0f);
+	
+	sphere1 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere1->transform().position = glm::vec3(-2.0f, 0.5f, -3.5f);
+	
+	/*plane = RenderManager::InitRenderObject(&ResourceManager::plane, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	plane->transform().scale = glm::vec3(100.0f, 1.0f, 100.0f);
+	plane->transform().position = glm::vec3(0.0f, 0.0f, 0.0f);*/
+
+	cube = RenderManager::InitRenderObject(&ResourceManager::cube, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	cube->transform().position = glm::vec3(1.0f, 0.5f, -2.5f);
+	cube->transform().scale = glm::vec3(1.0f, 3.0f, 1.0f);
+	
 }
 
 void init()
@@ -57,7 +80,7 @@ void init()
 	RenderManager::Init(1);
 	LightingManager::Init();
 	InputManager::Init(window);
-	CameraManager::Init(800.0f / 600.0f, 80.0f, 0.1f, 100.0f);
+	CameraManager::Init(800.0f / 600.0f, 45.0f, 0.1f, 100.0f);
 
 	glfwSetTime(0.0);
 
@@ -65,21 +88,7 @@ void init()
 	time(&timer);
 	srand((unsigned int)timer);
 
-	InitLights();
-
-	sphere0 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	sphere0->transform().position = glm::vec3(3.0f, 0.5f, 1.5f);
-
-	sphere1 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	sphere1->transform().position = glm::vec3(-2.0f, 0.5f, -3.5f);
-
-	plane = RenderManager::InitRenderObject(&ResourceManager::plane, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	plane->transform().scale = glm::vec3(100.0f, 1.0f, 100.0f);
-	plane->transform().position = glm::vec3(0.0f, -2.0f, 0.0f);
-
-	//cube = RenderManager::InitRenderObject(&ResourceManager::cube, &ResourceManager::phongShader, GL_TRIANGLES, 1);
-	//cube->transform().position = glm::vec3(1.0f, 2.5f, -2.5f);
-	//cube->transform().scale = glm::vec3(1.0f, 5.0f, 1.0f);
+	InitScene();
 }
 
 void step()

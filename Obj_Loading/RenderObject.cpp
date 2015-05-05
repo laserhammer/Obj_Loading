@@ -55,54 +55,37 @@ void RenderObject::Update(float dt)
 
 	glm::mat4 scaleOrigin = glm::translate(glm::mat4(), _transform.scaleOrigin);
 	glm::mat4 globalTraslateScaleOrigin = parentTrans * _transform.translate * scaleOrigin;
-	glm::mat4 scale = glm::inverse(globalTraslateScaleOrigin) * glm::scale(glm::mat4(), _transform.scale) * globalTraslateScaleOrigin;
+	glm::mat4 scale = glm::scale(glm::mat4(), _transform.scale);
 
 	_transform.model = parentModel * (_transform.translate * rotate * scale);
-	/*
-	memcpy(_perModelBlock.modelMat[0], glm::value_ptr(_transform.model[0]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.modelMat[1], glm::value_ptr(_transform.model[1]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.modelMat[2], glm::value_ptr(_transform.model[2]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.modelMat[3], glm::value_ptr(_transform.model[3]), sizeof(GLfloat) * 4);
-
-	glm::mat4 invTransModel = glm::inverse(glm::transpose(_transform.model));
-	memcpy(_perModelBlock.invTransModelMat[0], glm::value_ptr(invTransModel[0]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.invTransModelMat[1], glm::value_ptr(invTransModel[1]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.invTransModelMat[2], glm::value_ptr(invTransModel[2]), sizeof(GLfloat) * 4);
-	memcpy(_perModelBlock.invTransModelMat[3], glm::value_ptr(invTransModel[3]), sizeof(GLfloat) * 4);*/
 
 	_perModelBlock.modelMat = _transform.model;
-	_perModelBlock.inTransModelMat = glm::inverse(glm::transpose(_transform.model));
+	_perModelBlock.invTransModelMat = glm::inverse(glm::transpose(_transform.model));
 }
 
 void RenderObject::Draw()
 {
 	glBindVertexArray(_mesh->vao);
-	
+
+	glUseProgram(_shader->shaderPointer);
 	// Update the model Buffer
 	GLsizei vec4Size = sizeof(GLfloat) * 4;
-/*	memcpy(ResourceManager::perModelBuffer, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size, glm::value_ptr(_perModelBlock.modelMat[1]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
 	memcpy(ResourceManager::perModelBuffer + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
 
 	GLsizei mat4Size = vec4Size * 4;
-	memcpy(ResourceManager::perModelBuffer + mat4Size, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size, glm::value_ptr(_perModelBlock.modelMat[1]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer + mat4Size, glm::value_ptr(_perModelBlock.invTransModelMat[0]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size, glm::value_ptr(_perModelBlock.invTransModelMat[1]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 2, glm::value_ptr(_perModelBlock.invTransModelMat[2]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 3, glm::value_ptr(_perModelBlock.invTransModelMat[3]), vec4Size);
 
-	memcpy(ResourceManager::perModelBuffer + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);*/
+	memcpy(ResourceManager::perModelBuffer + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBufferLocation);
 	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::perModelBufferSize, ResourceManager::perModelBuffer, GL_DYNAMIC_DRAW);
 	
-	//glUseProgram(_shader->program);
-	glUseProgram(_shader->shaderPointer);
-	glUniformMatrix4fv(_shader->uModelMat, 1, GL_FALSE, glm::value_ptr(_perModelBlock.modelMat));
-	glUniformMatrix4fv(_shader->uViewMat, 1, GL_FALSE, glm::value_ptr(CameraManager::ViewMat()));
-	glUniformMatrix4fv(_shader->uProjMat, 1, GL_FALSE, glm::value_ptr(CameraManager::ProjMat()));
-	glUniform4fv(_shader->uColor, 1, glm::value_ptr(_perModelBlock.color));
-	glUniform4fv(_shader->uCamPos, 1, glm::value_ptr(CameraManager::CamPos()));
 	
 	glDrawElements(_mode, _mesh->count, GL_UNSIGNED_INT, 0);
 }

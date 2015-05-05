@@ -5,8 +5,6 @@
 
 struct CameraBlock
 {
-	//float viewProjMat[4][4];
-	//float camPos[4];
 	glm::mat4 viewProjMat;
 	glm::vec4 camPos;
 };

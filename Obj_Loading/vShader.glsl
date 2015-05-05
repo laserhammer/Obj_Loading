@@ -3,16 +3,26 @@
 in vec3 position;
 in vec3 normal;
 
-uniform mat4 modelMat;
-uniform mat4 viewMat;
-uniform mat4 projMat;
-uniform vec4 color;
-uniform vec4 camPos;
+layout (std140) uniform camera
+{
+	mat4 viewProjMat;
+	vec4 camPos;
+};
 
-out vec4 Color;
-out vec4 Normal;
-out vec4 WorldPos;
-out vec4 CamPos;
+layout (std140) uniform perModel
+{
+	mat4 modelMat;
+	mat4 invTransModelMat;
+	vec4 color;
+};
+
+out vertToFrag
+{
+	vec4 Color;
+	vec4 Normal;
+	vec4 WorldPos;
+	vec4 CamPos;
+};
 
 void main()
 {
@@ -20,5 +30,5 @@ void main()
 	Normal =  inverse(transpose(modelMat)) * vec4(normal.xyz, 0.0);
 	WorldPos = modelMat * vec4(position.xyz, 1.0);
 	CamPos = camPos;
-	gl_Position = projMat * viewMat * modelMat * vec4(position.xyz, 1.0);
+	gl_Position = viewProjMat * modelMat * vec4(position.xyz, 1.0);
 }

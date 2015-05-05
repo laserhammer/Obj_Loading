@@ -5,17 +5,22 @@ const int MAX_LIGHTS = 8;
 struct Light
 {
 	vec4 position;
-	vec4 color;
+	vec4 color_power;
 	vec4 ambient;
-	float power;
 };
 
-in vec4 Color;
-in vec4 Normal;
-in vec4 WorldPos;
-in vec4 CamPos;
+in vertToFrag
+{
+	vec4 Color;
+	vec4 Normal;
+	vec4 WorldPos;
+	vec4 CamPos;
+};
 
-uniform Light lights[MAX_LIGHTS];
+layout (std140) uniform lightsBlock
+{
+	Light lights[MAX_LIGHTS];
+};
 
 out vec4 outColor;
 
@@ -30,11 +35,12 @@ void main()
 		
 		float NdotL = dot(vec4(-lightDir.xyz, 0.0), Normal);
 		float intensity = clamp(NdotL, 0.0, 1.0);
-		diffuse += intensity * lights[i].color * lights[i].power / (dis * dis) + lights[i].ambient;
+		diffuse += intensity * vec4(lights[i].color_power.xyz, 1.0) * lights[i].color_power.w / (dis * dis) + lights[i].ambient;
 		
 		vec4 highlight = -reflect(vec4(lightDir.xyz, 0.0), Normal);
 		vec4 outVec = normalize(CamPos) - normalize(WorldPos);
-		vec4 specIntensity = lights[i].color * pow(max(dot(highlight, outVec), 0.0), 1.0) * NdotL;
+		float NdotOut = clamp(dot(vec4(-lightDir.xyz, 0.0), outVec), 0.0, 1.0);
+		vec4 specIntensity = vec4(lights[i].color_power.xyz, 1.0) * pow(max(dot(highlight, outVec), 0.0), 0.3) * NdotOut * NdotL;
 		specular += clamp(specIntensity, 0.0, 1.0);
 	}
 	

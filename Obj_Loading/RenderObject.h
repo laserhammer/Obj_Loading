@@ -9,11 +9,8 @@ struct CameraBlock;
 
 struct PerModelBlock
 {
-	//float modelMat[4][4];
-	//float invTransModelMat[4][4];
-	//float color[4];
 	glm::mat4 modelMat;
-	glm::mat4 inTransModelMat;
+	glm::mat4 invTransModelMat;
 	glm::vec4 color;
 };
 
