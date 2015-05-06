@@ -35,6 +35,13 @@ struct Mesh
 	GLint count;
 };
 
+struct UniformBuffer
+{
+	GLuint size;
+	GLuint bufferLocation;
+	GLubyte* data;
+};
+
 class ResourceManager
 {
 public:
@@ -44,15 +51,9 @@ public:
 	static Shader phongShader;
 	static GLuint phongFragShader;
 	static GLuint phongVertShader;
-	static const GLuint PERMODEL_BIND_POINT;
-	static const GLuint LIGHTS_BIND_POINT;
-	static const GLuint CAMERA_BIND_POINT;
-	static GLubyte* perModelBuffer;
-	static GLubyte* cameraBuffer;
-	static GLubyte* lightsBuffer;
-	static GLint perModelBufferSize;
-	static GLint cameraBufferSize;
-	static GLint lightsBufferSize;
+	static UniformBuffer perModelBuffer;
+	static UniformBuffer cameraBuffer;
+	static UniformBuffer lightsBuffer;
 
 	static Mesh sphere;
 	static Mesh cube;
@@ -66,5 +67,7 @@ private:
 	static void ParseOBJ(char* obj, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorm, std::vector<GLint>* elements);
 	static void GenMesh(GLfloat* verts, GLint vertsLength, GLint* elements, GLint count, Mesh& mesh, Shader* shader);
 	static void GenVertices(std::vector<GLfloat>* verts, std::vector<GLint>* vertElements, std::vector<GLfloat>* vertPos, std::vector<GLfloat>* vertNorms, std::vector<GLint>* elements);
+	static void GenUniformBuffer(UniformBuffer& buffer, GLsizei bufferSize);
 	static void ReleaseMesh(Mesh& mesh);
+	static void ReleaseBuffer(UniformBuffer& buffer);
 };

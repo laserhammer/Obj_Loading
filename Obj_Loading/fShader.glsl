@@ -5,8 +5,7 @@ const int MAX_LIGHTS = 8;
 struct Light
 {
 	vec4 position;
-	vec4 color_power;
-	vec4 ambient;
+	vec4 color_difPower;
 };
 
 in vertToFrag
@@ -20,6 +19,7 @@ in vertToFrag
 layout (std140) uniform lightsBlock
 {
 	Light lights[MAX_LIGHTS];
+	vec4 ambient;
 };
 
 out vec4 outColor;
@@ -28,21 +28,23 @@ void main()
 {
 	vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
 	vec4 specular = vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 lightColor, lightVec, lightDir, highlight, outVec, specInt;
+	float dis, NdotL, lightPower;
 	for(int i = 0; i < MAX_LIGHTS; ++i)
 	{
-		vec3 lightDir = lights[i].position.xyz - WorldPos.xyz;
-		float dis = length(lightDir);
+		lightColor = vec4(lights[i].color_difPower.xyz, 1.0);
+		lightPower = lights[i].color_difPower.w;
+		lightVec = vec4(lights[i].position.xyz - WorldPos.xyz, 0.0);
+		lightDir = normalize(lightVec);
 		
-		float NdotL = dot(vec4(-lightDir.xyz, 0.0), Normal);
-		float intensity = clamp(NdotL, 0.0, 1.0);
-		diffuse += intensity * vec4(lights[i].color_power.xyz, 1.0) * lights[i].color_power.w / (dis * dis) + lights[i].ambient;
+		dis = length(lightVec);
+		NdotL = dot(Normal, lightDir);
+		diffuse += clamp(NdotL, 0.0, 1.0) * lightColor * lightPower / (dis * dis);
 		
-		vec4 highlight = -reflect(vec4(lightDir.xyz, 0.0), Normal);
-		vec4 outVec = normalize(CamPos) - normalize(WorldPos);
-		float NdotOut = clamp(dot(vec4(-lightDir.xyz, 0.0), outVec), 0.0, 1.0);
-		vec4 specIntensity = vec4(lights[i].color_power.xyz, 1.0) * pow(max(dot(highlight, outVec), 0.0), 0.3) * NdotOut * NdotL;
-		specular += clamp(specIntensity, 0.0, 1.0);
+		highlight = reflect(-lightDir, Normal);
+		outVec = normalize(CamPos - WorldPos);
+		specular += lightColor * pow(max(dot(highlight, outVec), 0.0), 10.0);
 	}
 	
-	outColor = specular + diffuse * Color;
+	outColor = specular + (diffuse + ambient) * Color;
 };

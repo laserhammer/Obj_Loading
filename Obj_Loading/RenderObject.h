@@ -22,7 +22,6 @@ struct Transform
 	glm::vec3 linearVelocity;
 	glm::quat angularVelocity;
 	glm::vec3 rotationOrigin;
-	glm::vec3 scaleOrigin;
 	glm::mat4 translate;
 	glm::mat4 model;
 	Transform* parent;

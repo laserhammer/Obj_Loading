@@ -15,7 +15,6 @@ RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer
 	_transform.linearVelocity = glm::vec3();
 	_transform.angularVelocity = glm::quat();
 	_transform.rotationOrigin = glm::vec3();
-	_transform.scaleOrigin = glm::vec3();
 	_transform.translate = glm::mat4();
 	_transform.model = glm::mat4();
 	_transform.parent = nullptr;
@@ -24,17 +23,13 @@ RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer
 
 	_perModelBlock.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	glGenBuffers(1, &_perModelBufferLocation);
-	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBufferLocation);
-	glBindBufferBase(GL_UNIFORM_BUFFER, ResourceManager::PERMODEL_BIND_POINT, _perModelBufferLocation);
-
 	_mode = mode;
 	_layer = layer;
 }
 
 RenderObject::~RenderObject()
 {
-	glDeleteBuffers(1, &_perModelBufferLocation);
+	
 }
 
 void RenderObject::Update(float dt)
@@ -53,14 +48,12 @@ void RenderObject::Update(float dt)
 	glm::mat4 globalTranslateRotOrigin = parentTrans * _transform.translate * rotOrigin;
 	glm::mat4 rotate = glm::inverse(globalTranslateRotOrigin) * glm::mat4_cast(_transform.rotation) * globalTranslateRotOrigin;
 
-	glm::mat4 scaleOrigin = glm::translate(glm::mat4(), _transform.scaleOrigin);
-	glm::mat4 globalTraslateScaleOrigin = parentTrans * _transform.translate * scaleOrigin;
 	glm::mat4 scale = glm::scale(glm::mat4(), _transform.scale);
 
 	_transform.model = parentModel * (_transform.translate * rotate * scale);
 
 	_perModelBlock.modelMat = _transform.model;
-	_perModelBlock.invTransModelMat = glm::inverse(glm::transpose(_transform.model));
+	_perModelBlock.invTransModelMat = glm::transpose(glm::inverse(_transform.model));
 }
 
 void RenderObject::Draw()
@@ -70,22 +63,21 @@ void RenderObject::Draw()
 	glUseProgram(_shader->shaderPointer);
 	// Update the model Buffer
 	GLsizei vec4Size = sizeof(GLfloat) * 4;
-	memcpy(ResourceManager::perModelBuffer, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + vec4Size, glm::value_ptr(_perModelBlock.modelMat[1]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + vec4Size, glm::value_ptr(_perModelBlock.modelMat[1]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + vec4Size * 2, glm::value_ptr(_perModelBlock.modelMat[2]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + vec4Size * 3, glm::value_ptr(_perModelBlock.modelMat[3]), vec4Size);
 
 	GLsizei mat4Size = vec4Size * 4;
-	memcpy(ResourceManager::perModelBuffer + mat4Size, glm::value_ptr(_perModelBlock.invTransModelMat[0]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size, glm::value_ptr(_perModelBlock.invTransModelMat[1]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 2, glm::value_ptr(_perModelBlock.invTransModelMat[2]), vec4Size);
-	memcpy(ResourceManager::perModelBuffer + mat4Size + vec4Size * 3, glm::value_ptr(_perModelBlock.invTransModelMat[3]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + mat4Size, glm::value_ptr(_perModelBlock.invTransModelMat[0]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + mat4Size + vec4Size, glm::value_ptr(_perModelBlock.invTransModelMat[1]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + mat4Size + vec4Size * 2, glm::value_ptr(_perModelBlock.invTransModelMat[2]), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + mat4Size + vec4Size * 3, glm::value_ptr(_perModelBlock.invTransModelMat[3]), vec4Size);
 
-	memcpy(ResourceManager::perModelBuffer + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);
+	memcpy(ResourceManager::perModelBuffer.data + mat4Size * 2, glm::value_ptr(_perModelBlock.color), vec4Size);
 
-	glBindBuffer(GL_UNIFORM_BUFFER, _perModelBufferLocation);
-	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::perModelBufferSize, ResourceManager::perModelBuffer, GL_DYNAMIC_DRAW);
-	
+	glBindBuffer(GL_UNIFORM_BUFFER, ResourceManager::perModelBuffer.bufferLocation);
+	glBufferData(GL_UNIFORM_BUFFER, ResourceManager::perModelBuffer.size, ResourceManager::perModelBuffer.data, GL_DYNAMIC_DRAW);
 	
 	glDrawElements(_mode, _mesh->count, GL_UNSIGNED_INT, 0);
 }

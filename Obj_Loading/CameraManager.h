@@ -3,12 +3,6 @@
 #include <GLM\gtc\type_ptr.hpp>
 #include <GLM\gtc\matrix_transform.hpp>
 
-struct CameraBlock
-{
-	glm::mat4 viewProjMat;
-	glm::vec4 camPos;
-};
-
 class CameraManager
 {
 public:
@@ -24,7 +18,4 @@ private:
 	static glm::vec4 _camPos;
 
 	static glm::vec2 _position;
-
-	static CameraBlock _cameraData;
-	static GLuint _cameraBufferLocation;
 };
