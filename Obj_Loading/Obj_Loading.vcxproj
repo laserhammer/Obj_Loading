@@ -83,7 +83,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraManager.cpp" />
-    <ClCompile Include="Init_Shader.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="LightingManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -93,7 +92,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraManager.h" />
-    <ClInclude Include="Init_Shader.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="LightingManager.h" />
     <ClInclude Include="RenderManager.h" />
