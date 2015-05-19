@@ -4,7 +4,6 @@
 #include <GLM\gtc\quaternion.hpp>
 
 struct Mesh;
-struct Shader;
 struct CameraBlock;
 
 struct PerModelBlock
@@ -30,7 +29,7 @@ struct Transform
 class RenderObject
 {
 public:
-	RenderObject(Mesh* mesh = nullptr, Shader* shader = nullptr, GLenum mode = GL_TRIANGLES, GLuint layer = 1);
+	RenderObject(Mesh* mesh = nullptr, GLint shader = -1, GLenum mode = GL_TRIANGLES, GLuint layer = 1);
 	~RenderObject();
 
 	void Update(float dt);
@@ -48,7 +47,7 @@ public:
 	void layer(GLuint newLayer);
 private:
 	Mesh* _mesh;
-	Shader* _shader;
+	GLint _shader;
 	PerModelBlock _perModelBlock;
 	GLuint _perModelBufferLocation;
 	Transform _transform;

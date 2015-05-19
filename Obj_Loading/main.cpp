@@ -99,18 +99,18 @@ void InitScene()
 	light0->color = glm::vec4(0.6f, 1.0f, 0.0f, 1.0f);
 	light0->diffusePower = 5.0f;
 
-	plane = RenderManager::InitRenderObject(&ResourceManager::plane, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	plane = RenderManager::InitRenderObject(&ResourceManager::plane, ResourceManager::phongShader, GL_TRIANGLES, 1);
 	plane->transform().scale = glm::vec3(100.0f, 1.0f, 100.0f);
 	plane->transform().position = glm::vec3(0.0f, -1.0f, 0.0f);
 
-	sphere0 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere0 = RenderManager::InitRenderObject(&ResourceManager::sphere, ResourceManager::phongShader, GL_TRIANGLES, 1);
 	sphere0->transform().position = glm::vec3(3.0f, 0.0f, 1.5f);
 	sphere0->transform().scale = glm::vec3(3.0f, 1.0f, 1.0f);
 	
-	sphere1 = RenderManager::InitRenderObject(&ResourceManager::sphere, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	sphere1 = RenderManager::InitRenderObject(&ResourceManager::sphere, ResourceManager::phongShader, GL_TRIANGLES, 1);
 	sphere1->transform().position = glm::vec3(-2.0f, 0.0f, -3.5f);
 
-	cube = RenderManager::InitRenderObject(&ResourceManager::cube, &ResourceManager::phongShader, GL_TRIANGLES, 1);
+	cube = RenderManager::InitRenderObject(&ResourceManager::cube, ResourceManager::phongShader, GL_TRIANGLES, 1);
 	cube->transform().position = glm::vec3(1.0f, 0.0f, -2.5f);
 	cube->transform().scale = glm::vec3(1.0f, 3.0f, 1.0f);
 	

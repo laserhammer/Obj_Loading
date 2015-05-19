@@ -5,17 +5,15 @@
 
 std::vector<RenderObject*> RenderManager::_displayList;
 unsigned int RenderManager::_displayListLength;
-unsigned int RenderManager::_numInitializedRenderObjects;
 
 void RenderManager::Init(unsigned int numRenderObjects)
 {
 	_displayListLength = numRenderObjects;
 	_displayList = std::vector<RenderObject*>();
 	_displayList.reserve(numRenderObjects);
-	_numInitializedRenderObjects = 0;
 }
 
-RenderObject* RenderManager::InitRenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer)
+RenderObject* RenderManager::InitRenderObject(Mesh* mesh, GLint shader, GLenum mode, GLuint layer)
 {
 	RenderObject* retObj = new RenderObject(mesh, shader, mode, layer);
 	_displayList.push_back(retObj);
@@ -51,4 +49,3 @@ void RenderManager::DumpData()
 	}
 }
 
-	

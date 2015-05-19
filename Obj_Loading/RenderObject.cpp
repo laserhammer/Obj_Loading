@@ -4,7 +4,7 @@
 #include <iostream>
 #include "CameraManager.h"
 
-RenderObject::RenderObject(Mesh* mesh, Shader* shader, GLenum mode, GLuint layer)
+RenderObject::RenderObject(Mesh* mesh, GLint shader, GLenum mode, GLuint layer)
 {
 	_mesh = mesh;
 	_shader = shader;
@@ -60,7 +60,7 @@ void RenderObject::Draw()
 {
 	glBindVertexArray(_mesh->vao);
 
-	glUseProgram(_shader->shaderPointer);
+	glUseProgram(_shader);
 	// Update the model Buffer
 	GLsizei vec4Size = sizeof(GLfloat) * 4;
 	memcpy(ResourceManager::perModelBuffer.data, glm::value_ptr(_perModelBlock.modelMat[0]), vec4Size);
